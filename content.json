@@ -1,0 +1,59 @@
+
+[
+  {
+    "textId": "app_verify_access",
+    "description": "Loading text while verifying authentication",
+    "text": "Verifying access...",
+    "format": "plain",
+    "type": "Body"
+  },
+  {
+    "textId": "app_redirect_login",
+    "description": "Loading text while redirecting to login",
+    "text": "Redirecting to login...",
+    "format": "plain",
+    "type": "Body"
+  },
+  {
+    "textId": "app_unauthorized_title",
+    "description": "Title for unauthorized access screen",
+    "text": "Unauthorized",
+    "format": "plain",
+    "type": "Title"
+  },
+  {
+    "textId": "app_unauthorized_desc",
+    "description": "Description for unauthorized access screen",
+    "text": "You do not have permission to access this application.",
+    "format": "plain",
+    "type": "Body"
+  },
+  {
+    "textId": "header_title",
+    "description": "Main application title in header",
+    "text": "Aura Craft Studio Template",
+    "format": "plain",
+    "type": "Title"
+  },
+  {
+    "textId": "nav_workspace",
+    "description": "Navigation link to workspace",
+    "text": "My Workspace",
+    "format": "plain",
+    "type": "LinkText"
+  },
+  {
+    "textId": "nav_signout",
+    "description": "Navigation link to sign out",
+    "text": "Sign out",
+    "format": "plain",
+    "type": "LinkText"
+  },
+  {
+    "textId": "footer_copyright",
+    "description": "Footer copyright text",
+    "text": "© 2025 HumanizeIQ. All Rights Reserved.",
+    "format": "plain",
+    "type": "Body"
+  }
+]
