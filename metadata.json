@@ -1,8 +1,8 @@
 {
-  "name": "diagramming_drafter_harsh",
-  "description": "This is a tool to create a user generated diagram using natural language",
+  "name": "Messaging System Architect",
+  "description": "An AI-powered distributed systems architecture design and visualization tool.",
   "requestFramePermissions": [],
   "organization": "HumanizeIQ",
-  "project": "Templates",
-  "component": "Frontend Template"
+  "project": "ArchitectTools",
+  "component": "Diagrammer"
 }

@@ -38,6 +38,12 @@ export interface AppInfo {
   studio_app_url?: string;
 }
 
+// FIX: Add missing AppMetadata interface used by Dashboard component
+export interface AppMetadata {
+  name: string;
+  description: string;
+}
+
 export interface PullRequest {
   id: number;
   number?: number;
