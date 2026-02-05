@@ -1,6 +1,6 @@
 {
   "name": "diagramming_drafter_harsh",
-  "description": "A reusable UI skeleton with integrated Authentication, Theme management, and AI Connection services.",
+  "description": "This is a tool to create a user generated diagram using natural language",
   "requestFramePermissions": [],
   "organization": "HumanizeIQ",
   "project": "Templates",
