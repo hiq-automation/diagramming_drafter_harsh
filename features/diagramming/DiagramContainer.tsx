@@ -1,44 +1,85 @@
 import React, { useState } from 'react';
 import DiagramView from './DiagramView';
-import { DiagramData, DiagramNode } from './types';
+import { DiagramData } from './types';
 import { generateDiagram, persistMessage } from './services/diagramAiService';
 
 const DiagramContainer: React.FC = () => {
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [data, setData] = useState<DiagramData>({ nodes: [], edges: [] });
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [data, setData] = useState<DiagramData>({ mermaidCode: '' });
+  const [history, setHistory] = useState<string[]>([]);
+  const [commandHistory, setCommandHistory] = useState<{prompt: string, timestamp: number}[]>([]);
+  const [lastError, setLastError] = useState<string | null>(null);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
     
     setIsGenerating(true);
-    const userMsg = { id: Date.now().toString(), role: 'user' as const, content: prompt, timestamp: Date.now() };
+    setLastError(null);
+    const timestamp = Date.now();
+    const userMsg = { id: timestamp.toString(), role: 'user' as const, content: prompt, timestamp };
+    
+    // Track command history for session logging
+    setCommandHistory(prev => [...prev, { prompt, timestamp }]);
     await persistMessage(userMsg);
 
     try {
-      const result = await generateDiagram(prompt);
-      setData(result);
+      const response = await generateDiagram(prompt, data);
       
-      const modelMsg = { 
+      if (response.startsWith("Please add one component")) {
+        setLastError(response);
+      } else {
+        // Clean response from any markdown artifacts if AI hallucinates them
+        const cleanResponse = response
+          .replace(/```mermaid/g, '')
+          .replace(/```/g, '')
+          .trim();
+        
+        // Only update if it looks like a graph
+        if (cleanResponse.includes('graph')) {
+          if (data.mermaidCode) {
+            setHistory(prev => [...prev, data.mermaidCode]);
+          }
+          setData({ mermaidCode: cleanResponse });
+        } else {
+          // Fallback mechanism: if the AI only returned a snippet despite instructions
+          const fallbackCode = !data.mermaidCode 
+            ? `graph TB\n  ${cleanResponse}` 
+            : `${data.mermaidCode}\n  ${cleanResponse}`;
+          
+          if (data.mermaidCode) {
+            setHistory(prev => [...prev, data.mermaidCode]);
+          }
+          setData({ mermaidCode: fallbackCode });
+        }
+      }
+      
+      await persistMessage({ 
         id: (Date.now() + 1).toString(), 
         role: 'model' as const, 
-        content: `Architecture visualization complete for: ${prompt.substring(0, 30)}...`, 
+        content: response, 
         timestamp: Date.now() 
-      };
-      await persistMessage(modelMsg);
+      });
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Architectural synthesis failed.");
+      console.error("Architectural synthesis failed", error);
+      setLastError("Synthesis failed. Please try a simpler component name.");
     } finally {
       setIsGenerating(false);
+      setPrompt('');
+    }
+  };
+
+  const handleUndo = () => {
+    if (history.length > 0) {
+      const prev = history[history.length - 1];
+      setData({ mermaidCode: prev });
+      setHistory(prevHistory => prevHistory.slice(0, -1));
     }
   };
 
   const handleLoadExample = () => {
-    setPrompt("A secure distributed messaging system where a Mobile App (Producer) sends encrypted orders to a highly-available RabbitMQ Broker. Orders are consumed by an Inventory Service and a Payment Gateway, both persisting results to a shared PostgreSQL Database.");
+    setPrompt("Add a Producer named 'Mobile App'");
   };
-
-  const selectedNode = data.nodes.find(n => n.id === selectedNodeId) || null;
 
   return (
     <DiagramView
@@ -48,8 +89,11 @@ const DiagramContainer: React.FC = () => {
       onLoadExample={handleLoadExample}
       isGenerating={isGenerating}
       data={data}
-      selectedNode={selectedNode}
-      onSelectNode={setSelectedNodeId}
+      onSelectNode={() => {}}
+      errorMessage={lastError}
+      historyCount={history.length}
+      onUndo={handleUndo}
+      commandHistory={commandHistory}
     />
   );
 };

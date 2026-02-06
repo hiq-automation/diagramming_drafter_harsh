@@ -1,8 +1,9 @@
+
 export type SystemNodeType = 'PRODUCER' | 'BROKER' | 'CONSUMER' | 'DATABASE' | 'EXTERNAL_API' | 'CACHE' | 'TOPIC';
 
 export interface DiagramNode {
   id: string;
-  type: SystemNodeType;
+  type: string;
   label: string;
   description?: string;
   x?: number;
@@ -17,9 +18,7 @@ export interface DiagramEdge {
 }
 
 export interface DiagramData {
-  nodes: DiagramNode[];
-  edges: DiagramEdge[];
-  title?: string;
+  mermaidCode: string;
 }
 
 export interface ChatMessage {
