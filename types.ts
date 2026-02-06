@@ -38,12 +38,6 @@ export interface AppInfo {
   studio_app_url?: string;
 }
 
-// FIX: Add missing AppMetadata interface used by Dashboard component
-export interface AppMetadata {
-  name: string;
-  description: string;
-}
-
 export interface PullRequest {
   id: number;
   number?: number;
@@ -176,4 +170,12 @@ export interface Attachment {
     name: string;
     content: string;
     isProcessing: boolean;
+}
+
+/**
+ * AppMetadata represents the essential identification details for an application.
+ */
+export interface AppMetadata {
+  name: string;
+  description: string;
 }

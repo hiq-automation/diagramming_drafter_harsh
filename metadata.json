@@ -1,8 +1,8 @@
 {
-  "name": "Harsh Messaging System",
-  "description": "An AI-powered distributed systems architecture design and visualization tool.",
+  "name": "diagramming_drafter_harsh",
+  "description": "A reusable UI skeleton with integrated Authentication, Theme management, and AI Connection services.",
   "requestFramePermissions": [],
   "organization": "HumanizeIQ",
-  "project": "ArchitectTools",
-  "component": "Diagrammer"
+  "project": "Templates",
+  "component": "Frontend Template"
 }
