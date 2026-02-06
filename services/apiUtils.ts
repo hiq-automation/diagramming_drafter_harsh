@@ -9,6 +9,7 @@ export const isStudioMode = (): boolean => {
     return hostname.includes('.goog');
 };
 
+
 // --- Studio Mode Cookie Loading (Async) ---
 // This promise ensures the cookie is fetched only once per session.
 let studioCookiePromise: Promise<string | null> | null = null;
