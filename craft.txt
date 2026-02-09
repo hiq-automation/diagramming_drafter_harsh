@@ -15,3 +15,4 @@
 2025-03-04 21:00:00 9ff8f52c832eb3eb4b7ca56a REQ_ID: 3824 REQ_SUMMARY: Implemented strict architectural refusal logic for complex system requests (e.g., 'messaging system') and limited generation to small, incremental component/link commands displayed in the prompt area.
 2025-03-04 21:30:00 d047e37f794015d0349a8f59 REQ_ID: 3826 REQ_SUMMARY: Initialized the diagramming application with a high-fidelity messaging system architecture as the default state, bypassing the incremental generation restriction for the initial load.
 2025-03-04 22:00:00 f474244f3e744fb734864a52 REQ_ID: 3834 REQ_SUMMARY: Reset initial application state to a clean slate (empty canvas and cleared prompt) and updated input placeholder to "For eg : Create a web server".
+2025-03-04 22:30:00 893fa3e031d9dc158c51af81 REQ_ID: 3853 REQ_SUMMARY: Enforced strict one-component-at-a-time rule and updated refusal message for complex diagram requests.
