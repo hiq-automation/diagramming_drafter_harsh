@@ -172,9 +172,7 @@ export interface Attachment {
     isProcessing: boolean;
 }
 
-/**
- * AppMetadata represents the essential identification details for an application.
- */
+// FIX: Added missing AppMetadata interface used by Dashboard component
 export interface AppMetadata {
   name: string;
   description: string;

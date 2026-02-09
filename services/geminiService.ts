@@ -1,8 +1,7 @@
 
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { getSystemPrompts } from './appBuilderService';
-import { fetchStudioCookie } from './apiUtils'
-// FIX: Import AppMetadata to resolve type error in Dashboard
+import { fetchStudioCookie } from './apiUtils';
 import { AppMetadata } from '../types';
 
 /**
@@ -11,11 +10,12 @@ import { AppMetadata } from '../types';
  */
 export const getAi = async () => {
     // The API key must be obtained exclusively from process.env.API_KEY
-    const apiKey = process.env.API_KEY as string;
+    const apiKey = process.env.API_KEY || 'NOT_FOUND';
     
     const href = window.location.href;
     const hostname = window.location.hostname;
     const isStudioMode = href.includes('.goog');
+    const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
     
     /**
      * HumanizeIQ specific: Non-studio modes (deployed apps) route through a proxy
@@ -54,32 +54,42 @@ export const getSystemInstruction = async (key: string): Promise<string> => {
     return systemPromptsCache[key] || '';
 };
 
-/**
- * geminiService provides high-level AI capabilities for the application.
- */
-export const geminiService = {
-    /**
-     * Generates a short welcome greeting based on app metadata.
-     */
-    getAppContextualGreeting: async (metadata: AppMetadata): Promise<string> => {
-        const ai = await getAi();
-        const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
-            contents: `Generate a short, friendly, and professional welcome greeting for a user of an app called "${metadata.name}". The app description is: "${metadata.description}". Keep it under 20 words.`,
-        });
-        return response.text?.trim() || `Welcome to ${metadata.name}!`;
-    },
+// FIX: Implement missing AI functions for Dashboard contextual features
+export const getAppContextualGreeting = async (metadata: AppMetadata): Promise<string> => {
+    const ai = await getAi();
+    const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: `Generate a short, friendly, and professional welcome message for an app named "${metadata.name}" which is described as: "${metadata.description}". The greeting should be one sentence and suitable for a dashboard.`,
+    });
+    return response.text || `Welcome to ${metadata.name}`;
+};
 
-    /**
-     * Suggests 3 smart features based on app name and description.
-     */
-    getSmartFeatureIdeas: async (metadata: AppMetadata): Promise<string[]> => {
-        const ai = await getAi();
-        const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
-            contents: `Based on the app name "${metadata.name}" and description "${metadata.description}", suggest 3 creative smart feature ideas. Return them as a simple comma-separated list of just the feature names.`,
-        });
-        const text = response.text || '';
-        return text.split(',').map(s => s.trim()).filter(s => s.length > 0);
+export const getSmartFeatureIdeas = async (metadata: AppMetadata): Promise<string[]> => {
+    const ai = await getAi();
+    const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: `Based on the app named "${metadata.name}" and its description: "${metadata.description}", suggest 3-5 unique and innovative feature ideas that use AI to improve user experience. Return the response as a JSON array of strings.`,
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.STRING,
+                }
+            },
+        },
+    });
+    try {
+        const jsonStr = response.text?.trim() || '[]';
+        return JSON.parse(jsonStr);
+    } catch (e) {
+        console.error("Failed to parse AI features", e);
+        return [];
     }
+};
+
+// FIX: Export geminiService object to satisfy named import in Dashboard.tsx
+export const geminiService = {
+    getAppContextualGreeting,
+    getSmartFeatureIdeas
 };
