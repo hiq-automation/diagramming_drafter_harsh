@@ -1,9 +1,10 @@
+
 import React, { useState, useCallback } from 'react';
 import { generateResponse } from '../../services/llmService';
 import DiagramView from './DiagramView';
 import { ChatMessage } from '../../types';
 
-const INITIAL_CODE = 'graph TD';
+const INITIAL_CODE = `graph TD`;
 
 const DiagramContainer: React.FC = () => {
     const [prompt, setPrompt] = useState('');
@@ -11,7 +12,7 @@ const DiagramContainer: React.FC = () => {
     const [isGenerating, setIsGenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
-        { role: 'model', content: 'Hello! I have reset the workspace to an empty canvas. You can start by describing a system or adding individual components one at a time. What would you like to build first?' }
+        { role: 'model', content: "Hello! I'm your Diagram Architect. I've started with a clean canvas. What component or system should we begin with?" }
     ]);
 
     const handleGenerate = useCallback(async (overridingPrompt?: string) => {
@@ -79,7 +80,7 @@ const DiagramContainer: React.FC = () => {
         setChatMessages([
             { role: 'model', content: 'History cleared. Workspace reset to an empty canvas.' }
         ]);
-        setMermaidCode(INITIAL_CODE);
+        setMermaidCode('graph TD');
     }, []);
 
     return (
