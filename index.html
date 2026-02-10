@@ -4,14 +4,16 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="./vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Aura Diagram Studio</title>
+    <title>Aura Craft Studio Template</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
     <script>
       // Configure Tailwind to use the 'class' strategy for dark mode
       tailwind.config = {
         darkMode: 'class',
       }
+      // Initialize mermaid
+      mermaid.initialize({ startOnLoad: false, theme: 'default' });
     </script>
   <script type="importmap">
 {
@@ -53,5 +55,6 @@
     </script>
     <div id="root"></div>
     <script type="module" src="./index.tsx"></script>
+  <script type="module" src="/index.tsx"></script>
 </body>
 </html>

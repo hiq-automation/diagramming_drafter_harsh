@@ -1,7 +1,7 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
 import { getSystemPrompts } from './appBuilderService';
-import { fetchStudioCookie } from './apiUtils';
+import { fetchStudioCookie } from './apiUtils'
 import { AppMetadata } from '../types';
 
 /**
@@ -54,42 +54,58 @@ export const getSystemInstruction = async (key: string): Promise<string> => {
     return systemPromptsCache[key] || '';
 };
 
-// FIX: Implement missing AI functions for Dashboard contextual features
-export const getAppContextualGreeting = async (metadata: AppMetadata): Promise<string> => {
-    const ai = await getAi();
-    const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: `Generate a short, friendly, and professional welcome message for an app named "${metadata.name}" which is described as: "${metadata.description}". The greeting should be one sentence and suitable for a dashboard.`,
-    });
-    return response.text || `Welcome to ${metadata.name}`;
-};
-
-export const getSmartFeatureIdeas = async (metadata: AppMetadata): Promise<string[]> => {
-    const ai = await getAi();
-    const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: `Based on the app named "${metadata.name}" and its description: "${metadata.description}", suggest 3-5 unique and innovative feature ideas that use AI to improve user experience. Return the response as a JSON array of strings.`,
-        config: {
-            responseMimeType: "application/json",
-            responseSchema: {
-                type: Type.ARRAY,
-                items: {
-                  type: Type.STRING,
-                }
-            },
-        },
-    });
-    try {
-        const jsonStr = response.text?.trim() || '[]';
-        return JSON.parse(jsonStr);
-    } catch (e) {
-        console.error("Failed to parse AI features", e);
-        return [];
-    }
-};
-
-// FIX: Export geminiService object to satisfy named import in Dashboard.tsx
+/**
+ * geminiService providing contextual AI helper functions for the dashboard.
+ */
 export const geminiService = {
-    getAppContextualGreeting,
-    getSmartFeatureIdeas
+    /**
+     * Generates a contextual greeting based on app metadata.
+     */
+    getAppContextualGreeting: async (metadata: AppMetadata): Promise<string> => {
+        try {
+            const ai = await getAi();
+            const response = await ai.models.generateContent({
+                model: 'gemini-3-flash-preview',
+                contents: `Generate a short, friendly, and professional one-sentence greeting for an app named "${metadata.name}" which is described as: "${metadata.description}". The greeting should welcome the user to the platform.`,
+            });
+            return response.text?.trim() || `Welcome to ${metadata.name}`;
+        } catch (error) {
+            console.error("Error generating greeting:", error);
+            return `Welcome to ${metadata.name}`;
+        }
+    },
+
+    /**
+     * Suggests smart feature ideas based on app metadata using structured JSON output.
+     */
+    getSmartFeatureIdeas: async (metadata: AppMetadata): Promise<string[]> => {
+        try {
+            const ai = await getAi();
+            const response = await ai.models.generateContent({
+                model: 'gemini-3-flash-preview',
+                contents: `Based on the app name "${metadata.name}" and description "${metadata.description}", suggest 3-5 unique and innovative feature ideas that would fit this app. Return them as a JSON array of strings.`,
+                config: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: Type.ARRAY,
+                        items: { type: Type.STRING }
+                    }
+                }
+            });
+            
+            const text = response.text?.trim();
+            if (!text) return [];
+            
+            const features = JSON.parse(text);
+            return Array.isArray(features) ? features : [];
+        } catch (error) {
+            console.error("Error generating feature ideas:", error);
+            // Fallback features if AI generation fails
+            return [
+                "AI-Powered Collaboration",
+                "Intelligent Workflow Automation",
+                "Predictive Project Insights"
+            ];
+        }
+    }
 };

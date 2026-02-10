@@ -1,8 +1,8 @@
 {
-  "name": "Aura Diagram Studio",
-  "description": "An AI-powered architectural design tool for generating and visualizing messaging systems and distributed architectures.",
+  "name": "Diagram Drafter Harsh",
+  "description": "A diagram drafting tool used to draft system diagrams and generate mermaid codes for it",
   "requestFramePermissions": [],
   "organization": "HumanizeIQ",
-  "project": "ArchitecturalTools",
-  "component": "DiagramStudio"
+  "project": "Templates",
+  "component": "Frontend Template"
 }

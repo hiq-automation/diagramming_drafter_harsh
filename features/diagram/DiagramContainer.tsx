@@ -1,130 +1,99 @@
-
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../hooks/useAuth';
-import MainContainer from '../../containers/MainContainer';
+import React, { useState, useCallback } from 'react';
+import { generateResponse } from '../../services/llmService';
 import DiagramView from './DiagramView';
-import { getAi } from '../../services/geminiService';
+import { ChatMessage } from '../../types';
+
+const INITIAL_CODE = 'graph TD';
 
 const DiagramContainer: React.FC = () => {
-    const { authState, user, workspaceUrl, signOutUrl } = useAuth();
     const [prompt, setPrompt] = useState('');
-    const [mermaidCode, setMermaidCode] = useState('');
-    
-    const [isLoading, setIsLoading] = useState(false);
-    const [history, setHistory] = useState<string[]>([
-        'add a server',
-        'create a database',
-        'connect App to DB',
-        'add an API Gateway'
-    ]);
+    const [mermaidCode, setMermaidCode] = useState(INITIAL_CODE);
+    const [isGenerating, setIsGenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
+        { role: 'model', content: 'Hello! I have reset the workspace to an empty canvas. You can start by describing a system or adding individual components one at a time. What would you like to build first?' }
+    ]);
 
-    const generateDiagram = async () => {
+    const handleGenerate = useCallback(async (overridingPrompt?: string) => {
+        const inputPrompt = overridingPrompt || prompt;
+        if (!inputPrompt.trim()) return;
+        
+        const newUserMsg: ChatMessage = { role: 'user', content: inputPrompt };
+        setChatMessages(prev => [...prev, newUserMsg]);
+        if (!overridingPrompt) setPrompt('');
+        
+        setIsGenerating(true);
         setError(null);
-        if (!prompt.trim()) return;
-
-        // Strict refusal logic: only allow adding/modifying one component at a time
-        const isForbiddenRequest = (p: string) => {
-            const lower = p.toLowerCase().trim();
-            
-            // List of prefixes that indicate single-component or single-link actions
-            const allowedPrefixes = ['add ', 'create ', 'connect ', 'link ', 'draw ', 'make '];
-            const startsWithAllowedAction = allowedPrefixes.some(pre => lower.startsWith(pre));
-
-            // Keywords indicating entire systems or complex requests
-            const complexKeywords = ['system', 'architecture', 'diagram', 'infrastructure', 'complex', 'entire', 'full', 'all'];
-            const containsComplexKeyword = complexKeywords.some(kw => lower.includes(kw));
-
-            // Check for multiple actions using 'and' or commas
-            const containsMultipleActions = lower.includes(' and ') || lower.includes(',');
-
-            // If it's not a simple incremental action, or it mentions a system/complex design, or it's multiple parts: refuse.
-            if (!startsWithAllowedAction || (containsComplexKeyword && !lower.includes('label')) || containsMultipleActions) {
-                return true;
-            }
-            
-            return false;
-        };
-
-        if (isForbiddenRequest(prompt)) {
-            setError("This action is against my rules. I only allow adding one component or link at a time (e.g., 'add server' or 'connect A to B'). Please break down your request.");
-            return;
-        }
-
-        setIsLoading(true);
+        
         try {
-            const ai = await getAi();
-            const response = await ai.models.generateContent({
-                model: 'gemini-3-pro-preview',
-                contents: `CURRENT STATE:
-${mermaidCode || 'No diagram yet.'}
+            const systemInstruction = `You are an AI Diagram Architect specializing in Mermaid.js.
+            Your task is to update the current diagram based on user requests.
+            
+            Current Mermaid Syntax:
+            ${mermaidCode}
 
-USER ACTION:
-${prompt}`,
-                config: {
-                    thinkingConfig: { thinkingBudget: 15000 },
-                    temperature: 0.1,
-                    systemInstruction: `You are a strict technical illustrator. You ONLY evolve the flowchart by adding EXACTLY ONE node or ONE link at a time.
+            STRICT CONSTRAINTS:
+            1. You are NOT ALLOWED to generate complex diagrams (e.g., "messaging system", "e-commerce", "social network") or add more than ONE node/component at a time.
+            2. If the user's request is complex or asks for a full system at once, you MUST respond ONLY with the following JSON:
+               { "reply": "I am not allowed to generate complex diagrams start slow with small diagram like create a web server", "mermaidCode": "${mermaidCode.replace(/"/g, '\\"')}" }
+            3. For simple, valid requests (adding one node or one link), respond with:
+               { "reply": "A brief confirmation", "mermaidCode": "The full updated mermaid code" }
 
-DIRECTIONS:
-1. Maintain existing nodes and relationships.
-2. If USER ACTION asks to create a box, add it: e.g. NodeID[Label].
-3. If USER ACTION asks to connect nodes, add a link: e.g. NodeA --> NodeB.
-4. DO NOT generate more than 1 new node or 1 new link in a single turn.
-5. If the request is too broad, add only the most basic starting node.
-6. Start the diagram with "flowchart TD" if no diagram exists.
+            RULES:
+            - Respond with JSON ONLY. No markdown backticks.
+            - Do not generate complex designs at once.
+            - Preserve existing nodes unless asked to modify one.`;
 
-OUTPUT:
-- Return ONLY valid Mermaid flowchart TD code.
-- No markdown, no explanations.`
-                }
-            });
+            const response = await generateResponse(
+                { provider: 'google', model: 'gemini-3-flash-preview', systemInstruction },
+                [...chatMessages, newUserMsg]
+            );
 
-            const rawText = response.text || '';
-            const cleanedCode = rawText
-                .replace(/```mermaid/g, '')
-                .replace(/```/g, '')
-                .split('\n')
-                .filter(line => {
-                    const l = line.trim();
-                    return l.startsWith('flowchart') || l.startsWith('graph') || l.includes('[') || l.includes('-->') || l.includes('subgraph') || l.includes('end') || l.includes('style');
-                })
-                .join('\n')
-                .trim();
+            let parsed: { reply: string; mermaidCode: string };
+            try {
+                const cleanedResponse = response.replace(/```json/g, '').replace(/```/g, '').trim();
+                parsed = JSON.parse(cleanedResponse);
+            } catch (e) {
+                // Fallback parsing if JSON is slightly malformed
+                const replyMatch = response.match(/"reply":\s*"([^"]+)"/);
+                const codeMatch = response.match(/"mermaidCode":\s*"([^"]+)"/);
                 
-            if (cleanedCode && (cleanedCode.startsWith('flowchart') || cleanedCode.startsWith('graph'))) {
-                setMermaidCode(cleanedCode);
-                setHistory(prev => [prompt, ...prev.filter(h => h !== prompt)].slice(0, 15));
-                setPrompt('');
+                parsed = {
+                    reply: replyMatch ? replyMatch[1] : "I've processed your request.",
+                    mermaidCode: codeMatch ? codeMatch[1].replace(/\\n/g, '\n') : mermaidCode
+                };
             }
-        } catch (error) {
-            console.error("Diagram evolution failed:", error);
-            setError("Failed to process the diagram request. Try a simpler command.");
-        } finally {
-            setIsLoading(false);
-        }
-    };
 
-    if (authState === 'checking') {
-        return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900">
-                <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
-            </div>
-        );
-    }
+            if (parsed.mermaidCode) setMermaidCode(parsed.mermaidCode);
+            setChatMessages(prev => [...prev, { role: 'model', content: parsed.reply }]);
+        } catch (err: any) {
+            console.error("Generation error:", err);
+            setError('Failed to update diagram.');
+            setChatMessages(prev => [...prev, { role: 'model', content: 'I encountered an error while updating the diagram.' }]);
+        } finally {
+            setIsGenerating(false);
+        }
+    }, [prompt, mermaidCode, chatMessages]);
+
+    const handleClearHistory = useCallback(() => {
+        setChatMessages([
+            { role: 'model', content: 'History cleared. Workspace reset to an empty canvas.' }
+        ]);
+        setMermaidCode(INITIAL_CODE);
+    }, []);
 
     return (
-        <MainContainer user={user} workspaceUrl={workspaceUrl} signOutUrl={signOutUrl}>
-            <DiagramView 
-                prompt={prompt}
-                setPrompt={(val) => { setPrompt(val); setError(null); }}
-                mermaidCode={mermaidCode}
-                onGenerate={generateDiagram}
-                isLoading={isLoading}
-                history={history}
-                error={error}
-            />
-        </MainContainer>
+        <DiagramView
+            prompt={prompt}
+            setPrompt={setPrompt}
+            mermaidCode={mermaidCode}
+            setMermaidCode={setMermaidCode}
+            onGenerate={handleGenerate}
+            onClearHistory={handleClearHistory}
+            isGenerating={isGenerating}
+            error={error}
+            chatMessages={chatMessages}
+        />
     );
 };
 

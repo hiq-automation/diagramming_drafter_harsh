@@ -1,18 +1,15 @@
-
-2025-03-04 10:00:00 cf8daf03264c6d40cb9e08c5 REQ_ID: 3797 REQ_SUMMARY: Create a diagramming application with a three-column layout (Prompt, Canvas, Code) and AI integration for messaging system diagrams.
-2025-03-04 11:30:00 1fa427e31149a5e49fab3620 REQ_ID: 3798 REQ_SUMMARY: Implement a robust text input area in the left section for generating messaging system diagrams via AI.
-2025-03-04 12:00:00 adfb3c4451efe7c464cfe92f REQ_ID: 3799 REQ_SUMMARY: Add command log to the left sidebar to display history of executed prompts.
-2025-03-04 12:30:00 d70e685e0023bded7030c5ce REQ_ID: 3800 REQ_SUMMARY: Enhance the middle canvas section with a high-fidelity rendering engine and aesthetic grid workspace.
-2025-03-04 13:00:00 849c091d8eabdfec4f518f62 REQ_ID: 3801 REQ_SUMMARY: Ensure the right section displays the raw Mermaid code output corresponding to the canvas diagram with enhanced visual feedback.
-2025-03-04 14:15:00 e859f6c067d28daf77d460ee REQ_ID: 3802 REQ_SUMMARY: Polished the copy code functionality in the right-side syntax panel and ensured messaging system default prompt.
-2025-03-04 15:10:00 1233e4fd970ccad0e0d343dd REQ_ID: 3803 REQ_SUMMARY: Enhanced natural language processing for Mermaid diagram generation with optimized system instructions and robust output parsing.
-2025-03-04 16:20:00 a1d796d7328bd1b425e02ebc REQ_ID: 3804 REQ_SUMMARY: Generated a comprehensive messaging system diagram via AI architect and initialized application state with high-fidelity default architecture.
-2025-03-04 17:15:00 d106a5502eac3cc2874391b4 REQ_ID: 3805 REQ_SUMMARY: Implemented validation to prevent large system design requests, ensuring users provide smaller, incremental requirements.
-2025-03-04 18:30:00 ff7f88f531cd55c17b5a9de2 REQ_ID: 3815 REQ_SUMMARY: Refused complex system design request in accordance with architectural complexity guidelines.
-2025-03-04 19:15:00 ff7f88f531cd55c17b5a9de2 REQ_ID: 3815 REQ_SUMMARY: Updated refusal logic to catch 'messaging system' requests and display mandatory architectural refusal message.
-2025-03-04 20:00:00 db49f0f3dce475ad8f6d863a REQ_ID: 3816 REQ_SUMMARY: Implemented incremental diagram updates, allowing users to create components and link them via natural language commands by passing current state to the AI model.
-2025-03-04 20:30:00 47e22145a99e64c05bcf5b24 REQ_ID: 3822 REQ_SUMMARY: Refined incremental diagram logic to strictly support cumulative component creation and explicit node-to-node linking, ensuring canvas state persists and evolves across consecutive prompts.
-2025-03-04 21:00:00 9ff8f52c832eb3eb4b7ca56a REQ_ID: 3824 REQ_SUMMARY: Implemented strict architectural refusal logic for complex system requests (e.g., 'messaging system') and limited generation to small, incremental component/link commands displayed in the prompt area.
-2025-03-04 21:30:00 d047e37f794015d0349a8f59 REQ_ID: 3826 REQ_SUMMARY: Initialized the diagramming application with a high-fidelity messaging system architecture as the default state, bypassing the incremental generation restriction for the initial load.
-2025-03-04 22:00:00 f474244f3e744fb734864a52 REQ_ID: 3834 REQ_SUMMARY: Reset initial application state to a clean slate (empty canvas and cleared prompt) and updated input placeholder to "For eg : Create a web server".
-2025-03-04 22:30:00 893fa3e031d9dc158c51af81 REQ_ID: 3853 REQ_SUMMARY: Enforced strict one-component-at-a-time rule and updated refusal message for complex diagram requests.
+2025-10-20 12:00:00 CRAFT: 38e316967385c286ee9a039a REQ_ID: 3962 REQ_SUMMARY: Implemented tripartite diagram drafting interface with AI generation, live canvas rendering, and code output.
+2025-10-20 12:05:00 CRAFT: a776dc8522471493221985f0 REQ_ID: 3966 REQ_SUMMARY: Enhanced the prompt panel with suggestion templates and refined the text input area for system diagram generation.
+2025-10-20 12:10:00 CRAFT: 53dc003d8dd9a7850cb22823 REQ_ID: 3972 REQ_SUMMARY: Added a command log section to the left panel to display the history of executed prompts.
+2025-10-20 12:15:00 CRAFT: ea78b6f257c567cdb2273933 REQ_ID: 3978 REQ_SUMMARY: Integrated persistence for the command log using localStorage to store prompt history across sessions and added a clear history option.
+2025-10-27 15:10:00 CRAFT: ea78b6f257c567cdb2273933 REQ_ID: 3978 REQ_SUMMARY: Refined the command log implementation to store prompt history in session state (useState), ensuring history is cleared upon page refresh.
+2025-10-27 16:00:00 CRAFT: ea78b6f257c567cdb2273933 REQ_ID: 3978 REQ_SUMMARY: Added a visible session-based command log in the prompt section to display and re-execute recent prompts.
+2025-10-27 16:30:00 CRAFT: ea78b6f257c567cdb2273933 REQ_ID: 3978 REQ_SUMMARY: Regenerated prompt section as a chat-like interface where user commands receive conversational replies and update the diagram simultaneously.
+2025-10-27 16:45:00 CRAFT: dae6c766f04757717aefd7a0 REQ_ID: 3985 REQ_SUMMARY: Initialized the system with a comprehensive messaging system diagram and verified conversational AI drafting capabilities.
+2025-10-27 17:00:00 CRAFT: dae6c766f04757717aefd7a0 REQ_ID: 3985 REQ_SUMMARY: Refined the diagram drafting interface to strictly separate visual canvas rendering from source code editing, optimized Mermaid.js integration for real-time updates, and improved the AI system prompt for better diagram modification.
+2025-10-27 17:15:00 CRAFT: 76bce271226072c1ff1cca76 REQ_ID: 3987 REQ_SUMMARY: Implemented strict constraints on AI diagram generation to prevent the creation of complex systems or multiple nodes at once, enforcing a specific refusal message.
+2025-10-27 17:30:00 CRAFT: 3a0eb96fdcfa474eeb6bbe69 REQ_ID: 3991 REQ_SUMMARY: Reset initial diagram state to an empty canvas (graph TD) without any pre-defined nodes.
+2025-10-27 17:45:00 CRAFT: 60d329dd3e621606ce51c6be REQ_ID: 3997 REQ_SUMMARY: Made the Mermaid source code panel read-only to prevent direct user edits and ensure diagram integrity through AI-driven updates.
+2025-10-27 17:50:00 CRAFT: a867352078befca00eba541d REQ_ID: 3999 REQ_SUMMARY: Added zoom controls to the diagram canvas to allow users to adjust the view scale for better visualization of large diagrams.
+2025-10-27 18:00:00 CRAFT: 005dde40f67a1b90e9e0de06 REQ_ID: 4007 REQ_SUMMARY: Initialized the diagram state with a comprehensive messaging system architecture and updated the welcome message to reflect the pre-loaded content.
+2025-10-27 18:45:00 CRAFT: 005dde40f67a1b90e9e0de06 REQ_ID: 4007 REQ_SUMMARY: Reverted the diagram state to an empty canvas (graph TD) and updated the welcome message for an empty workspace as per user instructions.
