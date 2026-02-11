@@ -1,8 +1,8 @@
 {
-  "name": "Diagram Drafter Harsh",
-  "description": "A diagram drafting tool used to draft system diagrams and generate mermaid codes for it",
+  "name": "DiagramFlow AI Studio",
+  "description": "An intelligent diagramming platform that translates natural language descriptions into professional system architecture visualizations.",
   "requestFramePermissions": [],
   "organization": "HumanizeIQ",
-  "project": "Templates",
-  "component": "Frontend Template"
+  "project": "AuraCraft",
+  "component": "DiagrammingTool"
 }

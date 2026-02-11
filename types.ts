@@ -6,6 +6,14 @@ export interface ChatMessage {
   context?: string; // Stores full content (e.g., with file attachments) for AI context, while content is for display
 }
 
+/**
+ * Interface for application metadata used in Dashboard and AI context generation.
+ */
+export interface AppMetadata {
+  name: string;
+  description: string;
+}
+
 export type LogStatus = 'pending' | 'success' | 'error' | 'info';
 
 export interface LogMessage {
@@ -38,10 +46,30 @@ export interface AppInfo {
   studio_app_url?: string;
 }
 
-// Added AppMetadata interface for app details configuration
-export interface AppMetadata {
-  name: string;
-  description: string;
+export interface PullRequest {
+  id: number;
+  number?: number;
+  title: string;
+  state: 'open' | 'closed';
+  user: {
+    login: string;
+    avatar_url: string;
+  };
+  head: string | {
+    ref: string;
+  };
+  base: string | {
+    ref: string;
+  };
+  html_url: string;
+  created_at: string;
+  updated_at?: string;
+  merged: boolean;
+  merged_at?: string | null;
+  source?: 'gitea' | 'database';
+  environment?: 'non-prod' | 'prod' | 'dev';
+  envName?: string;
+  hasConflicts?: boolean;
 }
 
 export interface Organization {
