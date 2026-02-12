@@ -25,9 +25,9 @@ const getInternalSystemInstruction = async (key: string): Promise<string> => {
  * @returns True if the prompt is deemed too complex, false otherwise.
  */
 const checkPromptComplexity = (prompt: string): boolean => {
-    const lowerCasePrompt = prompt.toLowerCase();
+    const lowerCasePrompt = prompt.toLowerCase().trim();
     
-    // Keywords indicating complex or full system requests
+    // 1. Keywords indicating complex or full system requests
     const complexKeywords = [
         "messaging system",
         "distributed system",
@@ -37,19 +37,33 @@ const checkPromptComplexity = (prompt: string): boolean => {
         "architecture",
         "system design",
         "entire diagram",
-        "multiple components"
+        "multiple components",
+        "infrastructure",
+        "flowchart of a system"
     ];
 
     if (complexKeywords.some(keyword => lowerCasePrompt.includes(keyword))) {
         return true;
     }
 
-    // Detect multiple component additions via conjunctions or lists
-    // Example: "add a server and a database" or "add a server, database"
-    const hasConjunctions = / and | & | with | plus |,/i.test(lowerCasePrompt);
-    const isActionOriented = /add|create|generate|insert/i.test(lowerCasePrompt);
+    // 2. Pattern: "create a ... diagram" or "create a ... system"
+    // This catches patterns like "create a messaging system", "build a login system", etc.
+    const createComplexPattern = /(create|generate|draw|make|build|show) (a|an|the)? .* (diagram|system|architecture|setup)/i;
+    if (createComplexPattern.test(lowerCasePrompt)) {
+        return true;
+    }
 
-    if (hasConjunctions && isActionOriented) {
+    // 3. Pattern: "add ..., ..." (more than one item at a time) or "add ... and ..."
+    // Regex checks for a verb followed by something, then a conjunction, then another thing.
+    const addMultiplePattern = /(add|insert|put|create|generate) (a|an|the)? .+ (and|&|plus|,) (a|an|the)? .+/i;
+    if (addMultiplePattern.test(lowerCasePrompt)) {
+        return true;
+    }
+
+    // 4. Action-oriented with multiple markers (fallback)
+    const isActionOriented = /add|create|generate|insert|build/i.test(lowerCasePrompt);
+    const hasMultipleMarkers = / and | & | plus |,/i.test(lowerCasePrompt);
+    if (isActionOriented && hasMultipleMarkers) {
         return true;
     }
 
@@ -72,7 +86,7 @@ export const diagramService = {
         if (checkPromptComplexity(prompt)) {
             return {
                 reply: "This action is against the rules. I am only allowed to add one component at a time. Please start small, for example by saying 'add a web server'.",
-                mermaidCode: previousMermaidCode || 'graph TD\nStart[Single component addition required]',
+                mermaidCode: previousMermaidCode, // Maintain current state, no update to canvas
             };
         }
         // --- COMPLEXITY CHECK END ---
