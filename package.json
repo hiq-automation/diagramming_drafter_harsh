@@ -16,7 +16,8 @@
     "pdfjs-dist": "3.11.174",
     "mammoth": "1.6.0",
     "xlsx": "0.18.5",
-    "jspdf": "2.5.1"
+    "jspdf": "2.5.1",
+    "mermaid": "^10.9.1"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

@@ -1,8 +1,8 @@
 {
-  "name": "DiagramFlow AI Studio",
-  "description": "An intelligent diagramming platform that translates natural language descriptions into professional system architecture visualizations.",
+  "name": "Diagram Drafting Studio (AI)",
+  "description": "An AI-powered application for drafting diagrams and generating code from prompts.",
   "requestFramePermissions": [],
   "organization": "HumanizeIQ",
-  "project": "AuraCraft",
-  "component": "DiagrammingTool"
+  "project": "Templates",
+  "component": "Frontend Template"
 }

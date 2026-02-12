@@ -1,17 +1,10 @@
 
 
 export interface ChatMessage {
-  role: 'user' | 'model';
+  id: string; // Unique ID for React list rendering
+  role: 'user' | 'model' | 'system'; // Added 'system' role
   content: string;
   context?: string; // Stores full content (e.g., with file attachments) for AI context, while content is for display
-}
-
-/**
- * Interface for application metadata used in Dashboard and AI context generation.
- */
-export interface AppMetadata {
-  name: string;
-  description: string;
 }
 
 export type LogStatus = 'pending' | 'success' | 'error' | 'info';
@@ -178,4 +171,15 @@ export interface Attachment {
     name: string;
     content: string;
     isProcessing: boolean;
+}
+
+// Added AppMetadata for consistency with app definition
+export interface AppMetadata {
+  name: string;
+  description: string;
+}
+
+export interface DiagramGenerationOutput {
+  reply: string;
+  mermaidCode: string;
 }
