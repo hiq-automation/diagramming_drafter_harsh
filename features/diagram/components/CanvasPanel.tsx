@@ -1,130 +1,59 @@
 import React, { useEffect, useRef } from 'react';
-import { EyeIcon, SparklesIcon, XMarkIcon } from '../../../components/icons';
 
 interface CanvasPanelProps {
-  isLoading: boolean;
-  diagramCode: string;
-  nodes: string[];
-  error?: string | null;
+    code: string;
 }
 
-declare global {
-  interface Window {
-    mermaid: any;
-  }
-}
+const CanvasPanel: React.FC<CanvasPanelProps> = ({ code }) => {
+    const containerRef = useRef<HTMLDivElement>(null);
 
-const CanvasPanel: React.FC<CanvasPanelProps> = ({ isLoading, diagramCode, nodes, error }) => {
-  const mermaidRef = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+        const renderDiagram = async () => {
+            if (!containerRef.current || !(window as any).mermaid) return;
 
-  useEffect(() => {
-    if (window.mermaid && diagramCode && !isLoading) {
-      const isDarkMode = document.documentElement.classList.contains('dark');
-      
-      window.mermaid.initialize({
-        startOnLoad: false,
-        theme: isDarkMode ? 'dark' : 'default',
-        securityLevel: 'loose',
-        fontFamily: 'Inter, ui-sans-serif, system-ui',
-        flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' },
-      });
-      
-      if (mermaidRef.current) {
-        mermaidRef.current.innerHTML = '';
-        const id = `mermaid-svg-${Math.random().toString(36).substr(2, 9)}`;
-        
-        try {
-           window.mermaid.render(id, diagramCode).then(({ svg }: { svg: string }) => {
-            if (mermaidRef.current) {
-              mermaidRef.current.innerHTML = svg;
+            const mermaid = (window as any).mermaid;
+            const id = `mermaid-svg-${Math.round(Math.random() * 1000000)}`;
+            
+            try {
+                // Clear and render fresh
+                containerRef.current.innerHTML = '<div class="flex items-center justify-center p-8 text-slate-400">Rendering...</div>';
+                
+                // If the version is modern, use mermaid.run or mermaid.render
+                if (typeof mermaid.render === 'function') {
+                    const { svg } = await mermaid.render(id, code);
+                    containerRef.current.innerHTML = svg;
+                } else {
+                    // Fallback for older script inclusion
+                    containerRef.current.innerHTML = `<div class="mermaid">${code}</div>`;
+                    mermaid.contentLoaded();
+                }
+            } catch (e) {
+                console.error('Mermaid render error:', e);
+                containerRef.current.innerHTML = `
+                    <div class="max-w-md p-6 bg-red-50 dark:bg-red-950/20 rounded-xl border border-red-200 dark:border-red-900/50 shadow-sm">
+                        <div class="flex items-center gap-2 text-red-600 dark:text-red-400 font-bold mb-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                            </svg>
+                            Syntax Warning
+                        </div>
+                        <p class="text-xs text-red-500/80 dark:text-red-400/80 leading-relaxed">
+                            The current diagram code has structural errors. The AI is still refining the system architecture. Try asking for a "Flowchart TD" or check the code panel for manual fixes.
+                        </p>
+                    </div>
+                `;
             }
-          }).catch((err: any) => {
-            console.error("Mermaid Render Error:", err);
-          });
-        } catch (e) {
-          console.error("Mermaid Syntax Error:", e);
-        }
-      }
-    }
-  }, [diagramCode, isLoading]);
+        };
 
-  return (
-    <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-950">
-      <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <EyeIcon className="w-5 h-5 text-blue-500" />
-          <h3 className="font-semibold text-slate-800 dark:text-slate-100">Live Architecture Canvas</h3>
-        </div>
-        {nodes.length > 0 && (
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{nodes.length} Entities Detected</span>
-          </div>
-        )}
-      </div>
-      
-      <div className="flex-1 flex items-center justify-center p-8 overflow-auto bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] dark:bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:20px_20px]">
-        {isLoading ? (
-          <div className="flex flex-col items-center gap-4">
-            <div className="relative">
-              <div className="w-24 h-24 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <SparklesIcon className="w-8 h-8 text-cyan-500 animate-pulse" />
-              </div>
-            </div>
-            <p className="text-slate-500 dark:text-slate-400 text-sm font-semibold tracking-tight">Synthesizing Blueprint...</p>
-          </div>
-        ) : error ? (
-          <div className="text-center space-y-4 max-w-md animate-in slide-in-from-bottom-4 duration-500">
-            <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-2xl flex items-center justify-center mx-auto border border-red-200 dark:border-red-800 shadow-lg shadow-red-500/10 text-red-500">
-              <XMarkIcon className="w-10 h-10" />
-            </div>
-            <div className="space-y-2">
-              <p className="text-slate-800 dark:text-slate-200 font-bold text-lg leading-tight px-4">Complexity Restriction</p>
-              <p className="text-slate-500 dark:text-slate-400 text-sm italic px-6">
-                {error}
-              </p>
-            </div>
-          </div>
-        ) : diagramCode ? (
-          <div 
-            ref={mermaidRef} 
-            className="mermaid-wrapper transition-all duration-500 w-full flex justify-center p-4 bg-white/40 dark:bg-slate-900/40 rounded-3xl backdrop-blur-sm border border-slate-200/50 dark:border-slate-800/50 shadow-2xl"
-          >
-            {/* Mermaid SVG will be rendered here */}
-          </div>
-        ) : (
-          <div className="text-center space-y-6 max-w-sm">
-            <div className="w-20 h-20 bg-slate-100 dark:bg-slate-900 rounded-3xl flex items-center justify-center mx-auto border-2 border-dashed border-slate-200 dark:border-slate-800">
-              <EyeIcon className="w-10 h-10 text-slate-300 dark:text-slate-700" />
-            </div>
-            <div className="space-y-2">
-              <p className="text-slate-800 dark:text-slate-200 font-bold text-lg">Empty Workspace</p>
-              <p className="text-slate-400 dark:text-slate-500 text-sm">
-                Enter a system command on the left panel to begin drafting your architecture.
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
+        renderDiagram();
+    }, [code]);
 
-      <div className="p-4 bg-white/50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-800 flex justify-center">
-        <div className="flex items-center gap-6 text-[11px] font-bold text-slate-400 uppercase tracking-widest">
-          <div className="flex items-center gap-1.5">
-            <div className="w-2 h-2 rounded-full bg-blue-500" />
-            Vector Rendering
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-2 h-2 rounded-full bg-cyan-500" />
-            Entity Mapping
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-2 h-2 rounded-full bg-emerald-500" />
-            Live Sync
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+    return (
+        <div 
+            ref={containerRef} 
+            className="mermaid-container w-full flex items-center justify-center transition-all duration-500 ease-in-out"
+        />
+    );
 };
 
 export default CanvasPanel;

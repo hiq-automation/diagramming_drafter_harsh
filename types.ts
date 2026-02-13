@@ -21,12 +21,6 @@ export interface User {
   uid?: string;
 }
 
-// FIX: Added missing AppMetadata interface required by Dashboard.tsx
-export interface AppMetadata {
-  name: string;
-  description: string;
-}
-
 export interface UserSettings {
   systemPrompt: string;
 }
@@ -44,30 +38,10 @@ export interface AppInfo {
   studio_app_url?: string;
 }
 
-export interface PullRequest {
-  id: number;
-  number?: number;
-  title: string;
-  state: 'open' | 'closed';
-  user: {
-    login: string;
-    avatar_url: string;
-  };
-  head: string | {
-    ref: string;
-  };
-  base: string | {
-    ref: string;
-  };
-  html_url: string;
-  created_at: string;
-  updated_at?: string;
-  merged: boolean;
-  merged_at?: string | null;
-  source?: 'gitea' | 'database';
-  environment?: 'non-prod' | 'prod' | 'dev';
-  envName?: string;
-  hasConflicts?: boolean;
+// Added AppMetadata interface for app details configuration
+export interface AppMetadata {
+  name: string;
+  description: string;
 }
 
 export interface Organization {

@@ -1,190 +1,101 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
-import DiagramView from './DiagramView';
+import React, { useState, useCallback } from 'react';
 import { generateResponse } from '../../services/llmService';
+import DiagramView from './DiagramView';
+import { ChatMessage } from '../../types';
 
-export interface CommandLogEntry {
-  id: string;
-  text: string;
-  timestamp: string;
-}
-
-interface Edge {
-  from: string;
-  to: string;
-}
+const INITIAL_CODE = `graph TD`;
 
 const DiagramContainer: React.FC = () => {
-  const [prompt, setPrompt] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [diagramCode, setDiagramCode] = useState('');
-  const [nodes, setNodes] = useState<string[]>([]);
-  const [edges, setEdges] = useState<Edge[]>([]);
-  const [history, setHistory] = useState<CommandLogEntry[]>([]);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [prompt, setPrompt] = useState('');
+    const [mermaidCode, setMermaidCode] = useState(INITIAL_CODE);
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
+        { role: 'model', content: "Hello! I'm your Diagram Architect. I've started with a clean canvas. What component or system should we begin with?" }
+    ]);
 
-  /**
-   * Complexity Guardrails: Rejects prompts that attempt to create multiple 
-   * nodes or complex patterns in one go.
-   */
-  const isTooComplex = (text: string): boolean => {
-    const lowerText = text.toLowerCase();
-    // Keywords indicating multiple operations or complex patterns
-    const multipleOpsKeywords = [' and ', ' then ', ' also ', ',', ';', ' followed by '];
-    const tooManyWords = text.split(/\s+/).length > 15;
-    
-    return multipleOpsKeywords.some(keyword => lowerText.includes(keyword)) || tooManyWords;
-  };
-
-  /**
-   * Rebuilds the Mermaid diagram string based on persistent nodes and edges.
-   */
-  const updateMermaidCode = (currentNodes: string[], currentEdges: Edge[]) => {
-    if (currentNodes.length === 0) {
-      setDiagramCode(''); // Requirement 4381: Empty canvas initialization
-      return;
-    }
-
-    const codeLines = ['graph TD'];
-    
-    // Define nodes with safe IDs and label normalization
-    currentNodes.forEach((node, idx) => {
-      const safeId = `n${idx}`;
-      // Sanitize node name for mermaid compatibility
-      const sanitizedName = node.replace(/"/g, "'");
-      codeLines.push(`  ${safeId}["${sanitizedName}"]`);
-    });
-
-    // Define edges
-    currentEdges.forEach((edge) => {
-      const fromIdx = currentNodes.indexOf(edge.from);
-      const toIdx = currentNodes.indexOf(edge.to);
-      if (fromIdx !== -1 && toIdx !== -1) {
-        codeLines.push(`  n${fromIdx} --> n${toIdx}`);
-      }
-    });
-
-    setDiagramCode(codeLines.join('\n'));
-  };
-
-  const handleGenerate = useCallback(
-    async (textToGenerate: string) => {
-      const trimmedText = textToGenerate.trim();
-      if (!trimmedText) return;
-
-      // Rule 4 & 5: Complexity check
-      if (isTooComplex(trimmedText)) {
-        setErrorMessage('I am currently limited to incremental additions. Please add components one by one (e.g., "Add a Load Balancer").');
-        return;
-      }
-
-      setIsGenerating(true);
-      setErrorMessage(null);
-
-      try {
-        const systemInstruction = `
-          You are a System Architecture Assistant. Your goal is to extract a single component or a single connection from the user's prompt.
-          
-          Existing components in the diagram: [${nodes.join(', ')}]
-
-          Rules:
-          1. If the user wants to add a single component (e.g., "add a queue"), return JSON: {"type": "node", "name": "Message Queue"}.
-          2. If the user wants to connect components (e.g., "connect client to gateway"), return JSON: {"type": "connection", "from": "Client", "to": "Gateway"}.
-          3. If the user refers to an existing component by a similar name, resolve it to the exact existing name.
-          4. Only return valid JSON. No conversational text.
-          5. If the request involves multiple steps, return: {"error": "complex"}.
-        `;
-
-        const responseText = await generateResponse(
-          { provider: 'google', model: 'gemini-3-flash-preview', systemInstruction },
-          [{ role: 'user', content: trimmedText }]
-        );
-
-        let result;
+    const handleGenerate = useCallback(async (overridingPrompt?: string) => {
+        const inputPrompt = overridingPrompt || prompt;
+        if (!inputPrompt.trim()) return;
+        
+        const newUserMsg: ChatMessage = { role: 'user', content: inputPrompt };
+        setChatMessages(prev => [...prev, newUserMsg]);
+        if (!overridingPrompt) setPrompt('');
+        
+        setIsGenerating(true);
+        setError(null);
+        
         try {
-          // Robust JSON extraction
-          const cleanJson = responseText.substring(
-            responseText.indexOf('{'),
-            responseText.lastIndexOf('}') + 1
-          );
-          result = JSON.parse(cleanJson);
-        } catch (e) {
-          throw new Error("Failed to parse architecture instructions.");
+            const systemInstruction = `You are an AI Diagram Architect specializing in Mermaid.js.
+            Your task is to update the current diagram based on user requests.
+            
+            Current Mermaid Syntax:
+            ${mermaidCode}
+
+            STRICT CONSTRAINTS:
+            1. You are NOT ALLOWED to generate complex diagrams (e.g., "messaging system", "e-commerce", "social network") or add more than ONE node/component at a time.
+            2. If the user's request is complex or asks for a full system at once, you MUST respond ONLY with the following JSON:
+               { "reply": "I am not allowed to generate complex diagrams start slow with small diagram like create a web server", "mermaidCode": "${mermaidCode.replace(/"/g, '\\"')}" }
+            3. For simple, valid requests (adding one node or one link), respond with:
+               { "reply": "A brief confirmation", "mermaidCode": "The full updated mermaid code" }
+
+            RULES:
+            - Respond with JSON ONLY. No markdown backticks.
+            - Do not generate complex designs at once.
+            - Preserve existing nodes unless asked to modify one.`;
+
+            const response = await generateResponse(
+                { provider: 'google', model: 'gemini-3-flash-preview', systemInstruction },
+                [...chatMessages, newUserMsg]
+            );
+
+            let parsed: { reply: string; mermaidCode: string };
+            try {
+                const cleanedResponse = response.replace(/```json/g, '').replace(/```/g, '').trim();
+                parsed = JSON.parse(cleanedResponse);
+            } catch (e) {
+                // Fallback parsing if JSON is slightly malformed
+                const replyMatch = response.match(/"reply":\s*"([^"]+)"/);
+                const codeMatch = response.match(/"mermaidCode":\s*"([^"]+)"/);
+                
+                parsed = {
+                    reply: replyMatch ? replyMatch[1] : "I've processed your request.",
+                    mermaidCode: codeMatch ? codeMatch[1].replace(/\\n/g, '\n') : mermaidCode
+                };
+            }
+
+            if (parsed.mermaidCode) setMermaidCode(parsed.mermaidCode);
+            setChatMessages(prev => [...prev, { role: 'model', content: parsed.reply }]);
+        } catch (err: any) {
+            console.error("Generation error:", err);
+            setError('Failed to update diagram.');
+            setChatMessages(prev => [...prev, { role: 'model', content: 'I encountered an error while updating the diagram.' }]);
+        } finally {
+            setIsGenerating(false);
         }
+    }, [prompt, mermaidCode, chatMessages]);
 
-        if (result.error === 'complex') {
-          setErrorMessage('Please provide one instruction at a time to maintain architecture clarity.');
-          setIsGenerating(false);
-          return;
-        }
+    const handleClearHistory = useCallback(() => {
+        setChatMessages([
+            { role: 'model', content: 'History cleared. Workspace reset to an empty canvas.' }
+        ]);
+        setMermaidCode('graph TD');
+    }, []);
 
-        let updatedNodes = [...nodes];
-        let updatedEdges = [...edges];
-
-        if (result.type === 'node') {
-          if (!updatedNodes.some(n => n.toLowerCase() === result.name.toLowerCase())) {
-            updatedNodes.push(result.name);
-          }
-        } else if (result.type === 'connection') {
-          if (!updatedNodes.some(n => n.toLowerCase() === result.from.toLowerCase())) {
-            updatedNodes.push(result.from);
-          }
-          if (!updatedNodes.some(n => n.toLowerCase() === result.to.toLowerCase())) {
-            updatedNodes.push(result.to);
-          }
-          
-          // Re-find normalized names
-          const finalFrom = updatedNodes.find(n => n.toLowerCase() === result.from.toLowerCase()) || result.from;
-          const finalTo = updatedNodes.find(n => n.toLowerCase() === result.to.toLowerCase()) || result.to;
-
-          const edgeExists = updatedEdges.some(e => 
-            e.from.toLowerCase() === finalFrom.toLowerCase() && 
-            e.to.toLowerCase() === finalTo.toLowerCase()
-          );
-          
-          if (!edgeExists) {
-            updatedEdges.push({ from: finalFrom, to: finalTo });
-          }
-        }
-
-        setNodes(updatedNodes);
-        setEdges(updatedEdges);
-        updateMermaidCode(updatedNodes, updatedEdges);
-
-        const newEntry: CommandLogEntry = {
-          id: Date.now().toString(),
-          text: trimmedText,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        };
-        setHistory(prev => [newEntry, ...prev.slice(0, 9)]);
-        setPrompt('');
-
-      } catch (error) {
-        console.error('Generation failed:', error);
-        setErrorMessage('Failed to synthesize architecture. Try a simpler description.');
-      } finally {
-        setIsGenerating(false);
-      }
-    },
-    [nodes, edges]
-  );
-
-  useEffect(() => {
-    updateMermaidCode(nodes, edges);
-  }, [nodes, edges]);
-
-  return (
-    <DiagramView
-      prompt={prompt}
-      setPrompt={setPrompt}
-      onGenerate={() => handleGenerate(prompt)}
-      isGenerating={isGenerating}
-      diagramCode={diagramCode}
-      nodes={nodes}
-      history={history}
-      error={errorMessage}
-    />
-  );
+    return (
+        <DiagramView
+            prompt={prompt}
+            setPrompt={setPrompt}
+            mermaidCode={mermaidCode}
+            setMermaidCode={setMermaidCode}
+            onGenerate={handleGenerate}
+            onClearHistory={handleClearHistory}
+            isGenerating={isGenerating}
+            error={error}
+            chatMessages={chatMessages}
+        />
+    );
 };
 
 export default DiagramContainer;
