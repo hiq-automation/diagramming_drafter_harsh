@@ -1,8 +1,7 @@
 
 
 export interface ChatMessage {
-  id: string; // Unique ID for React list rendering
-  role: 'user' | 'model' | 'system'; // Added 'system' role
+  role: 'user' | 'model';
   content: string;
   context?: string; // Stores full content (e.g., with file attachments) for AI context, while content is for display
 }
@@ -20,6 +19,12 @@ export interface User {
   company_name?: string;
   auth_cookie?: string;
   uid?: string;
+}
+
+// FIX: Added missing AppMetadata interface required by Dashboard.tsx
+export interface AppMetadata {
+  name: string;
+  description: string;
 }
 
 export interface UserSettings {
@@ -171,15 +176,4 @@ export interface Attachment {
     name: string;
     content: string;
     isProcessing: boolean;
-}
-
-// Added AppMetadata for consistency with app definition
-export interface AppMetadata {
-  name: string;
-  description: string;
-}
-
-export interface DiagramGenerationOutput {
-  reply: string;
-  mermaidCode: string;
 }

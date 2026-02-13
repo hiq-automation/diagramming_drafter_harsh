@@ -1,6 +1,6 @@
 {
-  "name": "Diagram Drafting Studio (AI)",
-  "description": "An AI-powered application for drafting diagrams and generating code from prompts.",
+  "name": "Diagram drafter UI (AI)",
+  "description": "A reusable UI skeleton with integrated Authentication, Theme management, and AI Connection services.",
   "requestFramePermissions": [],
   "organization": "HumanizeIQ",
   "project": "Templates",
