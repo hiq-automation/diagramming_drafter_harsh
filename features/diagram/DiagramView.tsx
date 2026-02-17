@@ -50,42 +50,24 @@ const DiagramView: React.FC<DiagramViewProps> = ({
     };
 
     const handleSaveToR2 = async () => {
-        const source = getSerializedSvg();
-        if (!source) return;
         setIsSaving(true);
         try {
-            const canvas = document.createElement('canvas');
-            const svgElement = document.querySelector('.mermaid-container svg') as SVGSVGElement;
-            const bbox = svgElement.getBBox();
-            const padding = 40;
-            const width = svgElement.width.baseVal.value || bbox.width || 800;
-            const height = svgElement.height.baseVal.value || bbox.height || 600;
-            canvas.width = width + padding * 2; canvas.height = height + padding * 2;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) throw new Error("Canvas 2D context failed");
-            ctx.fillStyle = 'white'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-            const url = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(source)))}`;
-            const img = new Image(); img.crossOrigin = 'anonymous';
-            await new Promise((resolve, reject) => {
-                img.onload = async () => {
-                    try {
-                        ctx.drawImage(img, padding, padding);
-                        canvas.toBlob(async (blob) => {
-                            if (!blob) return reject(new Error("Failed to create blob"));
-                            try {
-                                await saveUserDoc(blob, 'HarshDiagrams', 'DiagramAssistant', { mermaidCode });
-                                setSaveSuccess(true);
-                                setTimeout(() => setSaveSuccess(false), 4000);
-                                onRefreshDiagrams();
-                                resolve(null);
-                            } catch (uploadErr) { reject(uploadErr); }
-                        }, 'image/png');
-                    } catch (err) { reject(err); }
-                };
-                img.onerror = () => reject(new Error("SVG Image source loading failed"));
-                img.src = url;
-            });
-        } catch (err) { console.error("Save error:", err); alert("Error: Failed to save to Cloud storage."); } finally { setIsSaving(false); }
+            const blob = new Blob([JSON.stringify({ 
+                mermaidCode, 
+                version: '1.0', 
+                timestamp: new Date().toISOString() 
+            })], { type: 'application/json' });
+            
+            await saveUserDoc(blob, 'HarshDiagrams', 'DiagramAssistant', { mermaidCode });
+            setSaveSuccess(true);
+            setTimeout(() => setSaveSuccess(false), 4000);
+            onRefreshDiagrams();
+        } catch (err) { 
+            console.error("Save error:", err); 
+            alert("Error: Failed to save to Cloud storage."); 
+        } finally { 
+            setIsSaving(false); 
+        }
     };
 
     const handleExportPNG = () => {

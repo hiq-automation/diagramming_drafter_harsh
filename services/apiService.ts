@@ -170,7 +170,7 @@ export async function saveUserDoc(file: Blob, category: string, agent: string = 
     const url = await getUrlWithStudioAuth(baseUrl);
 
     const formData = new FormData();
-    formData.append('file', file, `diagram-${Date.now()}.png`);
+    formData.append('file', file, `diagram-${Date.now()}.json`);
     formData.append('category', category);
     formData.append('agent', agent);
     formData.append('metadata', JSON.stringify(metadata));
