@@ -1,8 +1,8 @@
-
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { generateResponse } from '../../services/llmService';
 import DiagramView from './DiagramView';
 import { ChatMessage } from '../../types';
+import { getUserDoc } from '../../services/apiService';
 
 const INITIAL_CODE = `graph TD`;
 
@@ -11,9 +11,37 @@ const DiagramContainer: React.FC = () => {
     const [mermaidCode, setMermaidCode] = useState(INITIAL_CODE);
     const [isGenerating, setIsGenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [diagrams, setDiagrams] = useState<any[]>([]);
+    const [isLoadingDiagrams, setIsLoadingDiagrams] = useState(false);
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
         { role: 'model', content: "Hello! I'm your Diagram Architect. I've started with a clean canvas. What component or system should we begin with?" }
     ]);
+
+    const fetchDiagrams = useCallback(async () => {
+        setIsLoadingDiagrams(true);
+        try {
+            const res = await getUserDoc('HarshDiagrams');
+            if (res.success && Array.isArray(res.files)) {
+                setDiagrams(res.files);
+            }
+        } catch (err) {
+            console.error("Failed to fetch diagrams:", err);
+        } finally {
+            setIsLoadingDiagrams(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchDiagrams();
+    }, [fetchDiagrams]);
+
+    const handleSelectDiagram = useCallback((diagram: any) => {
+        const code = diagram.metadata?.mermaidCode || INITIAL_CODE;
+        setMermaidCode(code);
+        setChatMessages([{ role: 'model', content: `Loaded diagram: ${diagram.fileName}.` }]);
+        setIsSidebarOpen(false);
+    }, []);
 
     const handleGenerate = useCallback(async (overridingPrompt?: string) => {
         const inputPrompt = overridingPrompt || prompt;
@@ -55,10 +83,8 @@ const DiagramContainer: React.FC = () => {
                 const cleanedResponse = response.replace(/```json/g, '').replace(/```/g, '').trim();
                 parsed = JSON.parse(cleanedResponse);
             } catch (e) {
-                // Fallback parsing if JSON is slightly malformed
                 const replyMatch = response.match(/"reply":\s*"([^"]+)"/);
                 const codeMatch = response.match(/"mermaidCode":\s*"([^"]+)"/);
-                
                 parsed = {
                     reply: replyMatch ? replyMatch[1] : "I've processed your request.",
                     mermaidCode: codeMatch ? codeMatch[1].replace(/\\n/g, '\n') : mermaidCode
@@ -80,7 +106,7 @@ const DiagramContainer: React.FC = () => {
         setChatMessages([
             { role: 'model', content: 'History cleared. Workspace reset to an empty canvas.' }
         ]);
-        setMermaidCode('graph TD');
+        setMermaidCode(INITIAL_CODE);
     }, []);
 
     return (
@@ -94,6 +120,12 @@ const DiagramContainer: React.FC = () => {
             isGenerating={isGenerating}
             error={error}
             chatMessages={chatMessages}
+            isSidebarOpen={isSidebarOpen}
+            setIsSidebarOpen={setIsSidebarOpen}
+            diagrams={diagrams}
+            isLoadingDiagrams={isLoadingDiagrams}
+            onSelectDiagram={handleSelectDiagram}
+            onRefreshDiagrams={fetchDiagrams}
         />
     );
 };

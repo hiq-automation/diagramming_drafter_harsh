@@ -1,4 +1,3 @@
-
 import { getUrlWithStudioAuth, getFetchOptions } from './apiUtils';
 
 const getApiBaseUrl = (): string => {
@@ -164,16 +163,17 @@ export async function deleteFile(pathOrId: string, isPath: boolean = true): Prom
  * @param file The image or document blob to save.
  * @param category The category folder (e.g., 'HarshDiagrams').
  * @param agent An identifier for the agent context.
+ * @param metadata Additional metadata to store.
  */
-export async function saveUserDoc(file: Blob, category: string, agent: string = ''): Promise<any> {
+export async function saveUserDoc(file: Blob, category: string, agent: string = '', metadata: object = {}): Promise<any> {
     const baseUrl = `${getApiBaseUrl()}/save_user_doc`;
     const url = await getUrlWithStudioAuth(baseUrl);
 
     const formData = new FormData();
-    // Providing a filename ensures the backend receives it correctly in multipart form data
     formData.append('file', file, `diagram-${Date.now()}.png`);
     formData.append('category', category);
     formData.append('agent', agent);
+    formData.append('metadata', JSON.stringify(metadata));
 
     const options = await getFetchOptions({
         method: 'POST',
@@ -189,6 +189,29 @@ export async function saveUserDoc(file: Blob, category: string, agent: string = 
         return await response.json();
     } catch (error) {
         console.error('Error in saveUserDoc:', error);
+        throw error;
+    }
+}
+
+/**
+ * Fetches user documents within a specific category.
+ */
+export async function getUserDoc(category: string = 'General'): Promise<any> {
+    const baseUrl = `${getApiBaseUrl()}/get_user_doc`;
+    const separator = baseUrl.includes('?') ? '&' : '?';
+    const finalUrl = `${baseUrl}${separator}category=${encodeURIComponent(category)}`;
+    const url = await getUrlWithStudioAuth(finalUrl);
+    const options = await getFetchOptions({ method: 'GET' });
+
+    try {
+        const response = await fetch(url, options);
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Get user doc failed: ${response.status} ${errorText}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error in getUserDoc:', error);
         throw error;
     }
 }
