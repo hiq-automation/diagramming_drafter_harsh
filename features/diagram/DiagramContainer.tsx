@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { generateResponse } from '../../services/llmService';
 import DiagramView from './DiagramView';
 import { ChatMessage } from '../../types';
-import { getUserDoc, deleteFile, saveUserDoc } from '../../services/apiService';
+import { getUserDoc, deleteFile, saveUserDoc, updateFile } from '../../services/apiService';
 
 const INITIAL_CODE = `graph TD`;
 
@@ -14,6 +14,7 @@ const DiagramContainer: React.FC = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [diagrams, setDiagrams] = useState<any[]>([]);
     const [isLoadingDiagrams, setIsLoadingDiagrams] = useState(false);
+    const [activeFileId, setActiveFileId] = useState<string | null>(null);
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
         { role: 'model', content: "Hello! I'm your Diagram Architect. I've started with a clean canvas. What component or system should we begin with?" }
     ]);
@@ -39,6 +40,7 @@ const DiagramContainer: React.FC = () => {
     const handleSelectDiagram = useCallback((diagram: any) => {
         const code = diagram.metadata?.mermaidCode || INITIAL_CODE;
         setMermaidCode(code);
+        setActiveFileId(diagram.fileId);
         setChatMessages([{ role: 'model', content: `Loaded diagram: ${diagram.metadata?.displayName || diagram.fileName}.` }]);
         setIsSidebarOpen(false);
     }, []);
@@ -46,38 +48,61 @@ const DiagramContainer: React.FC = () => {
     const handleDeleteDiagram = useCallback(async (fileId: string) => {
         try {
             await deleteFile(fileId, false);
+            if (activeFileId === fileId) setActiveFileId(null);
             setChatMessages(prev => [...prev, { role: 'model', content: "Diagram deleted successfully from Cloud storage." }]);
             fetchDiagrams();
         } catch (err) {
             console.error("Delete error:", err);
             setError("Failed to delete diagram from cloud.");
         }
-    }, [fetchDiagrams]);
+    }, [fetchDiagrams, activeFileId]);
+
+    const handleSaveDiagram = useCallback(async () => {
+        const blob = new Blob([JSON.stringify({ 
+            mermaidCode, 
+            version: '1.0', 
+            timestamp: new Date().toISOString() 
+        })], { type: 'application/json' });
+        
+        const metadata = { mermaidCode };
+        
+        if (activeFileId) {
+            const file = new File([blob], `diagram-${Date.now()}.json`, { type: 'application/json' });
+            await updateFile(file, activeFileId, false, metadata);
+        } else {
+            const res = await saveUserDoc(blob, 'HarshDiagrams', 'DiagramAssistant', metadata);
+            if (res?.path) {
+                // If the API returns the new file path/id, we should ideally track it
+                // but for now we refresh to sync state.
+                fetchDiagrams();
+            }
+        }
+        await fetchDiagrams();
+    }, [mermaidCode, activeFileId, fetchDiagrams]);
 
     const handleRenameDiagram = useCallback(async (fileId: string, newName: string) => {
         const diagram = diagrams.find(d => d.fileId === fileId);
         if (!diagram) return;
-
-        // Skip if name is identical
         if ((diagram.metadata?.displayName || diagram.fileName.split('-')[0]) === newName) return;
 
         try {
-            // To migrate the R2 object key (since names are timestamp-based in saveUserDoc),
-            // we create a fresh document and remove the legacy one.
             const blob = new Blob([JSON.stringify({ 
                 mermaidCode: diagram.metadata?.mermaidCode || mermaidCode,
                 version: '1.0', 
                 timestamp: new Date().toISOString() 
             })], { type: 'application/json' });
             
-            // Step 1: Create the new record with updated metadata label
-            await saveUserDoc(blob, 'HarshDiagrams', 'DiagramAssistant', { 
+            const res = await saveUserDoc(blob, 'HarshDiagrams', 'DiagramAssistant', { 
                 ...diagram.metadata, 
                 displayName: newName 
             });
 
-            // Step 2: Delete the old record to complete migration
             await deleteFile(fileId, false);
+            if (activeFileId === fileId && res?.fileId) {
+                setActiveFileId(res.fileId);
+            } else if (activeFileId === fileId) {
+                setActiveFileId(null);
+            }
             
             setChatMessages(prev => [...prev, { role: 'model', content: `Diagram migrated and renamed to "${newName}".` }]);
             fetchDiagrams();
@@ -85,7 +110,7 @@ const DiagramContainer: React.FC = () => {
             console.error("Migration error:", err);
             setError("Failed to synchronize renaming with Cloud storage.");
         }
-    }, [diagrams, fetchDiagrams, mermaidCode]);
+    }, [diagrams, fetchDiagrams, mermaidCode, activeFileId]);
 
     const handleGenerate = useCallback(async (overridingPrompt?: string) => {
         const inputPrompt = overridingPrompt || prompt;
@@ -151,6 +176,7 @@ const DiagramContainer: React.FC = () => {
             { role: 'model', content: 'History cleared. Workspace reset to an empty canvas.' }
         ]);
         setMermaidCode(INITIAL_CODE);
+        setActiveFileId(null);
     }, []);
 
     return (
@@ -172,6 +198,8 @@ const DiagramContainer: React.FC = () => {
             onRefreshDiagrams={fetchDiagrams}
             onDeleteDiagram={handleDeleteDiagram}
             onRenameDiagram={handleRenameDiagram}
+            onSaveDiagram={handleSaveDiagram}
+            activeFileId={activeFileId}
         />
     );
 };

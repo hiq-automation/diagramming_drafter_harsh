@@ -5,7 +5,6 @@ import CodePanel from './components/CodePanel';
 import DiagramSidebar from './components/DiagramSidebar';
 import { ChatMessage } from '../../types';
 import { DownloadIcon, UploadIcon, CheckCircleIcon } from '../../components/icons';
-import { saveUserDoc } from '../../services/apiService';
 
 interface DiagramViewProps {
     prompt: string;
@@ -25,12 +24,14 @@ interface DiagramViewProps {
     onRefreshDiagrams: () => void;
     onDeleteDiagram?: (id: string) => void;
     onRenameDiagram?: (id: string, name: string) => void;
+    onSaveDiagram?: () => Promise<void>;
+    activeFileId: string | null;
 }
 
 const DiagramView: React.FC<DiagramViewProps> = ({
     prompt, setPrompt, mermaidCode, setMermaidCode, onGenerate, onClearHistory, isGenerating, error, chatMessages,
     isSidebarOpen, setIsSidebarOpen, diagrams, isLoadingDiagrams, onSelectDiagram, onRefreshDiagrams,
-    onDeleteDiagram, onRenameDiagram
+    onDeleteDiagram, onRenameDiagram, onSaveDiagram, activeFileId
 }) => {
     const [zoom, setZoom] = useState(1);
     const [viewMode, setViewMode] = useState<'canvas' | 'code'>('canvas');
@@ -39,7 +40,6 @@ const DiagramView: React.FC<DiagramViewProps> = ({
 
     const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.1, 3));
     const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.2));
-    const handleZoomReset = () => setZoom(1);
 
     const getSerializedSvg = () => {
         const svgElement = document.querySelector('.mermaid-container svg') as SVGSVGElement;
@@ -53,18 +53,12 @@ const DiagramView: React.FC<DiagramViewProps> = ({
     };
 
     const handleSaveToR2 = async () => {
+        if (!onSaveDiagram) return;
         setIsSaving(true);
         try {
-            const blob = new Blob([JSON.stringify({ 
-                mermaidCode, 
-                version: '1.0', 
-                timestamp: new Date().toISOString() 
-            })], { type: 'application/json' });
-            
-            await saveUserDoc(blob, 'HarshDiagrams', 'DiagramAssistant', { mermaidCode });
+            await onSaveDiagram();
             setSaveSuccess(true);
             setTimeout(() => setSaveSuccess(false), 4000);
-            onRefreshDiagrams();
         } catch (err) { 
             console.error("Save error:", err); 
             alert("Error: Failed to save to Cloud storage."); 
@@ -111,7 +105,7 @@ const DiagramView: React.FC<DiagramViewProps> = ({
                 <div className="fixed top-20 right-8 z-[100] animate-in slide-in-from-top-4 duration-500">
                     <div className="bg-emerald-500 text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-emerald-400">
                         <CheckCircleIcon className="w-5 h-5" />
-                        <span className="font-bold tracking-wide">Diagram saved to Cloud</span>
+                        <span className="font-bold tracking-wide">{activeFileId ? 'Changes updated' : 'Diagram saved to Cloud'}</span>
                     </div>
                 </div>
             )}
@@ -148,7 +142,7 @@ const DiagramView: React.FC<DiagramViewProps> = ({
                             <>
                                 <button onClick={handleSaveToR2} disabled={isSaving} className={`flex items-center gap-2 px-4 py-1.5 rounded-lg border text-[10px] font-bold uppercase tracking-wider transition-all shadow-sm ${isSaving ? 'bg-slate-50 border-slate-100 text-slate-300' : 'border-blue-200 dark:border-blue-900 bg-blue-50/50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600'}`}>
                                     <UploadIcon className={`w-3.5 h-3.5 ${isSaving ? 'animate-bounce' : ''}`} />
-                                    {isSaving ? 'Saving...' : 'Save'}
+                                    {isSaving ? 'Saving...' : activeFileId ? 'Overwrite' : 'Save'}
                                 </button>
                                 <button onClick={handleExportSVG} className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-bold uppercase tracking-wider transition-all"><DownloadIcon className="w-3.5 h-3.5" /> SVG</button>
                                 <button onClick={handleExportPNG} className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-bold uppercase tracking-wider transition-all"><DownloadIcon className="w-3.5 h-3.5" /> PNG</button>
