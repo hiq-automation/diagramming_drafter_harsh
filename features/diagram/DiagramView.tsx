@@ -23,11 +23,14 @@ interface DiagramViewProps {
     isLoadingDiagrams: boolean;
     onSelectDiagram: (d: any) => void;
     onRefreshDiagrams: () => void;
+    onDeleteDiagram?: (id: string) => void;
+    onRenameDiagram?: (id: string, name: string) => void;
 }
 
 const DiagramView: React.FC<DiagramViewProps> = ({
     prompt, setPrompt, mermaidCode, setMermaidCode, onGenerate, onClearHistory, isGenerating, error, chatMessages,
-    isSidebarOpen, setIsSidebarOpen, diagrams, isLoadingDiagrams, onSelectDiagram, onRefreshDiagrams
+    isSidebarOpen, setIsSidebarOpen, diagrams, isLoadingDiagrams, onSelectDiagram, onRefreshDiagrams,
+    onDeleteDiagram, onRenameDiagram
 }) => {
     const [zoom, setZoom] = useState(1);
     const [viewMode, setViewMode] = useState<'canvas' | 'code'>('canvas');
@@ -119,6 +122,8 @@ const DiagramView: React.FC<DiagramViewProps> = ({
                 diagrams={diagrams}
                 isLoading={isLoadingDiagrams}
                 onSelect={onSelectDiagram}
+                onDelete={onDeleteDiagram}
+                onRename={onRenameDiagram}
             />
 
             <div className="w-96 flex-shrink-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 z-10 flex flex-col">
