@@ -158,3 +158,37 @@ export async function deleteFile(pathOrId: string, isPath: boolean = true): Prom
     }
     return await response.json();
 }
+
+/**
+ * Saves a user document with strict scoping as per r2_explorer.json.
+ * @param file The image or document blob to save.
+ * @param category The category folder (e.g., 'HarshDiagrams').
+ * @param agent An identifier for the agent context.
+ */
+export async function saveUserDoc(file: Blob, category: string, agent: string = ''): Promise<any> {
+    const baseUrl = `${getApiBaseUrl()}/save_user_doc`;
+    const url = await getUrlWithStudioAuth(baseUrl);
+
+    const formData = new FormData();
+    // Providing a filename ensures the backend receives it correctly in multipart form data
+    formData.append('file', file, `diagram-${Date.now()}.png`);
+    formData.append('category', category);
+    formData.append('agent', agent);
+
+    const options = await getFetchOptions({
+        method: 'POST',
+        body: formData,
+    });
+
+    try {
+        const response = await fetch(url, options);
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Save user doc failed: ${response.status} ${errorText}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error in saveUserDoc:', error);
+        throw error;
+    }
+}

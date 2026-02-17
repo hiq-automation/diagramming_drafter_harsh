@@ -1,9 +1,11 @@
+
 import React, { useState } from 'react';
 import PromptPanel from './components/PromptPanel';
 import CanvasPanel from './components/CanvasPanel';
 import CodePanel from './components/CodePanel';
 import { ChatMessage } from '../../types';
-import { DownloadIcon } from '../../components/icons';
+import { DownloadIcon, UploadIcon, CheckCircleIcon } from '../../components/icons';
+import { saveUserDoc } from '../../services/apiService';
 
 interface DiagramViewProps {
     prompt: string;
@@ -22,6 +24,8 @@ const DiagramView: React.FC<DiagramViewProps> = ({
 }) => {
     const [zoom, setZoom] = useState(1);
     const [viewMode, setViewMode] = useState<'canvas' | 'code'>('canvas');
+    const [isSaving, setIsSaving] = useState(false);
+    const [saveSuccess, setSaveSuccess] = useState(false);
 
     const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.1, 3));
     const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.2));
@@ -36,6 +40,61 @@ const DiagramView: React.FC<DiagramViewProps> = ({
             source = source.replace(/<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
         }
         return source;
+    };
+
+    const handleSaveToR2 = async () => {
+        const source = getSerializedSvg();
+        if (!source) return;
+        
+        setIsSaving(true);
+        try {
+            const canvas = document.createElement('canvas');
+            const svgElement = document.querySelector('.mermaid-container svg') as SVGSVGElement;
+            const bbox = svgElement.getBBox();
+            const padding = 40;
+            const width = svgElement.width.baseVal.value || bbox.width || 800;
+            const height = svgElement.height.baseVal.value || bbox.height || 600;
+            
+            canvas.width = width + padding * 2;
+            canvas.height = height + padding * 2;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) throw new Error("Canvas 2D context failed");
+            
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            const url = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(source)))}`;
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+
+            await new Promise((resolve, reject) => {
+                img.onload = async () => {
+                    try {
+                        ctx.drawImage(img, padding, padding);
+                        canvas.toBlob(async (blob) => {
+                            if (!blob) return reject(new Error("Failed to create blob"));
+                            try {
+                                await saveUserDoc(blob, 'HarshDiagrams', 'DiagramAssistant');
+                                setSaveSuccess(true);
+                                setTimeout(() => setSaveSuccess(false), 4000);
+                                resolve(null);
+                            } catch (uploadErr) {
+                                reject(uploadErr);
+                            }
+                        }, 'image/png');
+                    } catch (err) {
+                        reject(err);
+                    }
+                };
+                img.onerror = () => reject(new Error("SVG Image source loading failed"));
+                img.src = url;
+            });
+        } catch (err) {
+            console.error("Save error:", err);
+            alert("Error: Failed to save the diagram to Cloud storage.");
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const handleExportPNG = () => {
@@ -84,6 +143,14 @@ const DiagramView: React.FC<DiagramViewProps> = ({
 
     return (
         <div className="flex h-full w-full bg-slate-50 dark:bg-slate-900 overflow-hidden text-sm">
+            {saveSuccess && (
+                <div className="fixed top-20 right-8 z-[100] animate-in slide-in-from-top-4 duration-500">
+                    <div className="bg-emerald-500 text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-emerald-400">
+                        <CheckCircleIcon className="w-5 h-5" />
+                        <span className="font-bold tracking-wide">User document saved successfully</span>
+                    </div>
+                </div>
+            )}
             <div className="w-96 flex-shrink-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 z-10 flex flex-col">
                 <PromptPanel {...{ prompt, setPrompt, onGenerate, onClearHistory, isGenerating, error, chatMessages }} />
             </div>
@@ -103,6 +170,14 @@ const DiagramView: React.FC<DiagramViewProps> = ({
                     <div className="flex items-center gap-2">
                         {viewMode === 'canvas' && (
                             <>
+                                <button 
+                                    onClick={handleSaveToR2} 
+                                    disabled={isSaving}
+                                    className={`flex items-center gap-2 px-4 py-1.5 rounded-lg border text-[10px] font-bold uppercase tracking-wider transition-all shadow-sm ${isSaving ? 'bg-slate-50 border-slate-100 text-slate-300' : 'border-blue-200 dark:border-blue-900 bg-blue-50/50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600'}`}
+                                >
+                                    <UploadIcon className={`w-3.5 h-3.5 ${isSaving ? 'animate-bounce' : ''}`} />
+                                    {isSaving ? 'Saving...' : 'Save'}
+                                </button>
                                 <button onClick={handleExportSVG} className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-bold uppercase tracking-wider transition-all"><DownloadIcon className="w-3.5 h-3.5" /> SVG</button>
                                 <button onClick={handleExportPNG} className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-bold uppercase tracking-wider transition-all"><DownloadIcon className="w-3.5 h-3.5" /> PNG</button>
                                 <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700">
