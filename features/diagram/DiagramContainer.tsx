@@ -131,16 +131,17 @@ const DiagramContainer: React.FC = () => {
             ${mermaidCode}
 
             STRICT CONSTRAINTS:
-            1. You are NOT ALLOWED to generate complex diagrams (e.g., "messaging system", "e-commerce", "social network") or add more than ONE node/component at a time.
-            2. If the user's request is complex or asks for a full system at once, you MUST respond ONLY with the following JSON:
+            1. You are NOT ALLOWED to generate abstract, high-level complex system architectures from a single broad term (e.g., 'messaging system', 'e-commerce', 'social network').
+            2. You ARE ALLOWED to process sequential, step-by-step instructions that explicitly define individual entities and their relationships (e.g., 'add a user communicating with a web server talking with a database d1 inside a Cloudflare container').
+            3. If the user asks for a broad 'system' or 'architecture' without specific step-by-step entities, you MUST respond ONLY with the following JSON:
                { "reply": "I am not allowed to generate complex diagrams start slow with small diagram like create a web server", "mermaidCode": "${mermaidCode.replace(/"/g, '\\"')}" }
-            3. For simple, valid requests (adding one node or one link), respond with:
-               { "reply": "A brief confirmation", "mermaidCode": "The full updated mermaid code" }
+            4. For valid requests, respond with:
+               { "reply": "A brief confirmation of the changes made", "mermaidCode": "The full updated mermaid code" }
 
             RULES:
             - Respond with JSON ONLY. No markdown backticks.
-            - Do not generate complex designs at once.
-            - Preserve existing nodes unless asked to modify one.`;
+            - Process each sequential detail (nodes, relationships, containers like 'subgraph') mentioned in the prompt.
+            - Preserve existing nodes unless asked to modify or replace them.`;
 
             const response = await generateResponse(
                 { provider: 'google', model: 'gemini-3-flash-preview', systemInstruction },
@@ -180,27 +181,29 @@ const DiagramContainer: React.FC = () => {
     }, []);
 
     return (
-        <DiagramView
-            prompt={prompt}
-            setPrompt={setPrompt}
-            mermaidCode={mermaidCode}
-            setMermaidCode={setMermaidCode}
-            onGenerate={handleGenerate}
-            onClearHistory={handleClearHistory}
-            isGenerating={isGenerating}
-            error={error}
-            chatMessages={chatMessages}
-            isSidebarOpen={isSidebarOpen}
-            setIsSidebarOpen={setIsSidebarOpen}
-            diagrams={diagrams}
-            isLoadingDiagrams={isLoadingDiagrams}
-            onSelectDiagram={handleSelectDiagram}
-            onRefreshDiagrams={fetchDiagrams}
-            onDeleteDiagram={handleDeleteDiagram}
-            onRenameDiagram={handleRenameDiagram}
-            onSaveDiagram={handleSaveDiagram}
-            activeFileId={activeFileId}
-        />
+        <div className="flex-1 flex flex-col overflow-hidden animate-in fade-in duration-500">
+            <DiagramView
+                prompt={prompt}
+                setPrompt={setPrompt}
+                mermaidCode={mermaidCode}
+                setMermaidCode={setMermaidCode}
+                onGenerate={handleGenerate}
+                onClearHistory={handleClearHistory}
+                isGenerating={isGenerating}
+                error={error}
+                chatMessages={chatMessages}
+                isSidebarOpen={isSidebarOpen}
+                setIsSidebarOpen={setIsSidebarOpen}
+                diagrams={diagrams}
+                isLoadingDiagrams={isLoadingDiagrams}
+                onSelectDiagram={handleSelectDiagram}
+                onRefreshDiagrams={fetchDiagrams}
+                onDeleteDiagram={handleDeleteDiagram}
+                onRenameDiagram={handleRenameDiagram}
+                onSaveDiagram={handleSaveDiagram}
+                activeFileId={activeFileId}
+            />
+        </div>
     );
 };
 
