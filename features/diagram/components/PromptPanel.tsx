@@ -1,5 +1,6 @@
+
 import React, { useRef, useEffect } from 'react';
-import { SparklesIcon, TrashIcon, PaperAirplaneIcon } from '../../../components/icons';
+import { SparklesIcon, ArrowPathIcon, PaperAirplaneIcon } from '../../../components/icons';
 import { ChatMessage } from '../../../types';
 
 interface PromptPanelProps {
@@ -51,10 +52,10 @@ const PromptPanel: React.FC<PromptPanelProps> = ({
                 </div>
                 <button 
                     onClick={onClearHistory}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-all"
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-all"
                     title="Reset Conversation"
                 >
-                    <TrashIcon className="w-4 h-4" />
+                    <ArrowPathIcon className="w-4 h-4" />
                 </button>
             </div>
 
