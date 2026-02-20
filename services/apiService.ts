@@ -157,14 +157,6 @@ export async function deleteFile(pathOrId: string, isPath: boolean = true): Prom
     }
     return await response.json();
 }
-
-/**
- * Saves a user document with strict scoping as per r2_explorer.json.
- * @param file The image or document blob to save.
- * @param category The category folder (e.g., 'HarshDiagrams').
- * @param agent An identifier for the agent context.
- * @param metadata Additional metadata to store.
- */
 export async function saveUserDoc(file: Blob, category: string, agent: string = '', metadata: object = {}): Promise<any> {
     const baseUrl = `${getApiBaseUrl()}/save_user_doc`;
     const url = await getUrlWithStudioAuth(baseUrl);
@@ -192,10 +184,6 @@ export async function saveUserDoc(file: Blob, category: string, agent: string = 
         throw error;
     }
 }
-
-/**
- * Fetches user documents within a specific category.
- */
 export async function getUserDoc(category: string = 'General'): Promise<any> {
     const baseUrl = `${getApiBaseUrl()}/get_user_doc`;
     const separator = baseUrl.includes('?') ? '&' : '?';

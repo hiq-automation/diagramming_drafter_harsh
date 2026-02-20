@@ -1,7 +1,7 @@
-
 import React, { useRef, useEffect } from 'react';
 import { SparklesIcon, ArrowPathIcon, PaperAirplaneIcon } from '../../../components/icons';
 import { ChatMessage } from '../../../types';
+import { SUGGESTIONS } from '../constants';
 
 interface PromptPanelProps {
     prompt: string;
@@ -12,13 +12,6 @@ interface PromptPanelProps {
     error: string | null;
     chatMessages: ChatMessage[];
 }
-
-const SUGGESTIONS = [
-    "Add a Load Balancer",
-    "Add a Redis Cache",
-    "Scale API to 3 nodes",
-    "Connect User to UI"
-];
 
 const PromptPanel: React.FC<PromptPanelProps> = ({ 
     prompt, 
