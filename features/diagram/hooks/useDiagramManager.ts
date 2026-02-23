@@ -54,6 +54,9 @@ export const useDiagramManager = () => {
     }, [fetchDiagrams, activeFileId]);
 
     const handleSaveDiagram = useCallback(async (name?: string) => {
+        const existingDiagram = activeFileId ? diagrams.find(d => d.fileId === activeFileId) : null;
+        const displayName = name || existingDiagram?.metadata?.displayName || existingDiagram?.fileName.split('-')[0];
+
         const blob = new Blob([JSON.stringify({
             mermaidCode,
             version: '1.0',
@@ -62,7 +65,7 @@ export const useDiagramManager = () => {
 
         const metadata = {
             mermaidCode,
-            ...(name ? { displayName: name } : {})
+            ...(displayName ? { displayName } : {})
         };
 
         const res = await saveUserDoc(blob, DIAGRAM_CATEGORY, AGENT_NAME, metadata);
@@ -82,7 +85,7 @@ export const useDiagramManager = () => {
         }
 
         await fetchDiagrams();
-    }, [mermaidCode, activeFileId, fetchDiagrams]);
+    }, [mermaidCode, activeFileId, diagrams, fetchDiagrams]);
 
     const handleRenameDiagram = useCallback(async (fileId: string, newName: string) => {
         const diagram = diagrams.find(d => d.fileId === fileId);
