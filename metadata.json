@@ -1,0 +1,8 @@
+{
+  "name": "Diagram Drafter Harsh(NL - 3)",
+  "description": "A diagram drafting tool used to draft system diagrams and generate mermaid codes for it",
+  "requestFramePermissions": [],
+  "organization": "HumanizeIQ",
+  "project": "Templates",
+  "component": "Frontend Template"
+}
