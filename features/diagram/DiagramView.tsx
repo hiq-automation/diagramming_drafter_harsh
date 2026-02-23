@@ -3,6 +3,7 @@ import PromptPanel from './components/PromptPanel';
 import CanvasPanel from './components/CanvasPanel';
 import CodePanel from './components/CodePanel';
 import DiagramSidebar from './components/DiagramSidebar';
+import SaveNamingPopup from './components/SaveNamingPopup';
 import { ChatMessage } from '../../types';
 import { DownloadIcon, UploadIcon, CheckCircleIcon } from '../../components/icons';
 import { useDiagramUI } from './hooks/useDiagramUI';
@@ -23,24 +24,32 @@ interface DiagramViewProps {
     onRefreshDiagrams: () => void;
     onDeleteDiagram?: (id: string) => void;
     onRenameDiagram?: (id: string, name: string) => void;
-    onSaveDiagram?: () => Promise<void>;
+    onSaveDiagram?: (name?: string) => Promise<void>;
     activeFileId: string | null;
 }
 
 const DiagramView: React.FC<DiagramViewProps> = (props) => {
     const ui = useDiagramUI();
+    const [isNamingPopupOpen, setIsNamingPopupOpen] = React.useState(false);
 
-    const handleSaveToR2 = async () => {
+    const handleSaveToR2 = async (name?: string) => {
         if (!props.onSaveDiagram) return;
+
+        if (!props.activeFileId && !name) {
+            setIsNamingPopupOpen(true);
+            return;
+        }
+
         ui.setIsSaving(true);
+        setIsNamingPopupOpen(false);
         try {
-            await props.onSaveDiagram();
+            await props.onSaveDiagram(name);
             ui.triggerSaveSuccess(!!props.activeFileId);
-        } catch (err) { 
-            console.error("Save error:", err); 
-            alert("Error: Failed to save to Cloud storage."); 
-        } finally { 
-            ui.setIsSaving(false); 
+        } catch (err) {
+            console.error("Save error:", err);
+            alert("Error: Failed to save to Cloud storage.");
+        } finally {
+            ui.setIsSaving(false);
         }
     };
 
@@ -54,9 +63,9 @@ const DiagramView: React.FC<DiagramViewProps> = (props) => {
                     </div>
                 </div>
             )}
-            
-            <DiagramSidebar 
-                isOpen={ui.isSidebarOpen} 
+
+            <DiagramSidebar
+                isOpen={ui.isSidebarOpen}
                 onToggle={ui.toggleSidebar}
                 diagrams={props.diagrams}
                 isLoading={props.isLoadingDiagrams}
@@ -66,14 +75,14 @@ const DiagramView: React.FC<DiagramViewProps> = (props) => {
             />
 
             <div className="w-96 flex-shrink-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 z-10 flex flex-col">
-                <PromptPanel 
-                    prompt={props.prompt} 
-                    setPrompt={props.setPrompt} 
-                    onGenerate={props.onGenerate} 
-                    onClearHistory={props.onClearHistory} 
-                    isGenerating={props.isGenerating} 
-                    error={props.error} 
-                    chatMessages={props.chatMessages} 
+                <PromptPanel
+                    prompt={props.prompt}
+                    setPrompt={props.setPrompt}
+                    onGenerate={props.onGenerate}
+                    onClearHistory={props.onClearHistory}
+                    isGenerating={props.isGenerating}
+                    error={props.error}
+                    chatMessages={props.chatMessages}
                 />
             </div>
 
@@ -119,6 +128,11 @@ const DiagramView: React.FC<DiagramViewProps> = (props) => {
                         <div className="h-full w-full bg-white dark:bg-slate-900 animate-in slide-in-from-right-4 duration-300"><CodePanel code={props.mermaidCode} setCode={props.setMermaidCode} /></div>
                     )}
                 </div>
+                <SaveNamingPopup
+                    isOpen={isNamingPopupOpen}
+                    onClose={() => setIsNamingPopupOpen(false)}
+                    onSave={(name) => handleSaveToR2(name)}
+                />
             </div>
         </div>
     );

@@ -29,3 +29,4 @@
 2025-10-28 12:00:00 CRAFT: 277dc75f2f290f8a5cf8bd02 REQ_ID: 9964 RE REQ_SUMMARY: Updated Draft Assistant icon to a reload icon in the prompt panel.
 2025-10-28 14:00:00 CRAFT: 6b67ad0a54de0311d7bc56be REQ_ID: 9974 RE REQ_SUMMARY: Enabled incremental and sequential diagram building from explicit step-by-step entity descriptions while maintaining restrictions on abstract complex system generation.
 2025-10-28 15:00:00 CRAFT: afe47d6a1db65c80e419a560 REQ_ID: 10090 REQ_SUMMARY: Refactored Diagram feature to decouple logic and UI by extracting data management and UI state into custom hooks (useDiagramManager, useDiagramUI) and constants.
+2026-02-23 16:42:26 CRAFT: 2808fe30229dbb5b8ab4aecb REQ_ID: 10232 REQ_SUMMARY: Implement diagram save flow with naming popup and history list update.
