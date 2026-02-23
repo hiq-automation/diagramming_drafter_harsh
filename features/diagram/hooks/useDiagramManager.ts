@@ -65,15 +65,22 @@ export const useDiagramManager = () => {
             ...(name ? { displayName: name } : {})
         };
 
-        if (activeFileId) {
-            const file = new File([blob], `diagram-${Date.now()}.json`, { type: 'application/json' });
-            await updateFile(file, activeFileId, false, metadata);
-        } else {
-            const res = await saveUserDoc(blob, DIAGRAM_CATEGORY, AGENT_NAME, metadata);
-            if (res?.path) {
-                fetchDiagrams();
+        const res = await saveUserDoc(blob, DIAGRAM_CATEGORY, AGENT_NAME, metadata);
+
+        if (res && (res.fileId || res.path)) {
+            if (activeFileId) {
+                // If overwriting, delete the previous version after successful save of new version
+                try {
+                    await deleteFile(activeFileId, false);
+                } catch (delErr) {
+                    console.error("Cleanup error (old file):", delErr);
+                    // Non-fatal, we continue
+                }
             }
+            // Set the new file as active to enable subsequent overwrites
+            setActiveFileId(res.fileId || null);
         }
+
         await fetchDiagrams();
     }, [mermaidCode, activeFileId, fetchDiagrams]);
 
