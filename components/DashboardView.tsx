@@ -8,11 +8,12 @@ interface DashboardViewProps {
   isAiLoading: boolean;
 }
 
-export const DashboardView: React.FC<DashboardViewProps> = ({ 
-  metadata, 
-  greeting, 
-  features, 
-  isAiLoading 
+
+export const DashboardView: React.FC<DashboardViewProps> = ({
+  metadata,
+  greeting,
+  features,
+  isAiLoading
 }) => {
   return (
     <div className="space-y-6">
