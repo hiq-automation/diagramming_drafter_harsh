@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { BookOpenIcon, DocumentTextIcon, EditIcon, TrashIcon, CheckCircleIcon, XMarkIcon } from '../../../components/icons';
+import { getDescriptiveNameFromCode } from '../utils';
 
 interface DiagramSidebarProps {
     isOpen: boolean;
@@ -11,17 +12,40 @@ interface DiagramSidebarProps {
     onRename?: (fileId: string, newName: string) => void;
 }
 
-const DiagramSidebar: React.FC<DiagramSidebarProps> = ({ 
-    isOpen, onToggle, diagrams, isLoading, onSelect, onDelete, onRename 
+const DiagramSidebar: React.FC<DiagramSidebarProps> = ({
+    isOpen, onToggle, diagrams, isLoading, onSelect, onDelete, onRename
 }) => {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [hoveredId, setHoveredId] = useState<string | null>(null);
     const [tempName, setTempName] = useState('');
 
+    const getDisplayName = (diagram: any) => {
+        const metadataName = diagram.metadata?.displayName;
+        const fileNameBase = diagram.fileName.split('-')[0];
+
+        // Use metadata name if it exists and is not generic
+        if (metadataName && metadataName.toLowerCase() !== 'diagram') {
+            return metadataName;
+        }
+
+        // Try to get descriptive name from content
+        const descriptiveName = getDescriptiveNameFromCode(diagram.metadata?.mermaidCode);
+        if (descriptiveName && descriptiveName.toLowerCase() !== 'diagram') {
+            return descriptiveName;
+        }
+
+        // Fallback to filename base if not generic
+        if (fileNameBase && fileNameBase.toLowerCase() !== 'diagram') {
+            return fileNameBase;
+        }
+
+        return 'diagram';
+    };
+
     const startEditing = (e: React.MouseEvent, diagram: any) => {
         e.stopPropagation();
         setEditingId(diagram.fileId);
-        setTempName(diagram.metadata?.displayName || diagram.fileName.split('-')[0]);
+        setTempName(getDisplayName(diagram));
     };
 
     const cancelEditing = (e: React.MouseEvent) => {
@@ -50,7 +74,7 @@ const DiagramSidebar: React.FC<DiagramSidebarProps> = ({
             <div className="flex flex-col h-full w-full min-w-[288px]">
                 <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between h-16">
                     {isOpen && <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">Library</h2>}
-                    <button 
+                    <button
                         onClick={onToggle}
                         className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-500"
                     >
@@ -96,7 +120,7 @@ const DiagramSidebar: React.FC<DiagramSidebarProps> = ({
                                                 ) : (
                                                     <>
                                                         <p className="text-[11px] font-bold text-slate-700 dark:text-slate-200 truncate">
-                                                            {diagram.metadata?.displayName || diagram.fileName.split('-')[0]}
+                                                            {getDisplayName(diagram)}
                                                         </p>
                                                         <p className="text-[9px] text-slate-400">
                                                             {new Date(diagram.uploadedAt).toLocaleDateString()}
@@ -104,7 +128,7 @@ const DiagramSidebar: React.FC<DiagramSidebarProps> = ({
                                                     </>
                                                 )}
                                             </div>
-                                            
+
                                             <div className={`flex items-center gap-1 transition-opacity duration-200 ${hoveredId === diagram.fileId || editingId === diagram.fileId ? 'opacity-100' : 'opacity-0'}`}>
                                                 {editingId === diagram.fileId ? (
                                                     <>
