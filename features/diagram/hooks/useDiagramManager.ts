@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { generateResponse } from '../../../services/llmService';
 import { getUserDoc, deleteFile, saveUserDoc, updateFile } from '../../../services/apiService';
 import { ChatMessage } from '../../../types';
-import { INITIAL_CODE, DIAGRAM_CATEGORY, AGENT_NAME, SYSTEM_INSTRUCTION_TEMPLATE } from '../constants';
+import { INITIAL_CODE, DIAGRAM_CATEGORY, AGENT_NAME } from '../constants';
 import { getComponentPrompts } from '../../../services/appBuilder/promptService';
 
 
@@ -143,16 +143,18 @@ export const useDiagramManager = () => {
 
         try {
             let systemInstruction: string;
-            if (systemPromptTemplate) {
-                // Replace simple ${mermaidCode}
-                systemInstruction = systemPromptTemplate.replace(/\${mermaidCode}/g, mermaidCode);
-                // Handle the escaped version if present: ${mermaidCode.replace(/"/g, '\\"')} or similar
-                // The API content has: ${mermaidCode.replace(/"/g, '\\\\\"')}
-                const escapedMermaidCode = mermaidCode.replace(/"/g, '\\"');
-                systemInstruction = systemInstruction.replace(/\${mermaidCode\.replace\(\/\"\/g,\s*'.*?'\)\}/g, escapedMermaidCode);
-            } else {
-                systemInstruction = SYSTEM_INSTRUCTION_TEMPLATE(mermaidCode);
+            if (!systemPromptTemplate) {
+                setError("System prompt is still loading or could not be fetched.");
+                setIsGenerating(false);
+                return;
             }
+
+            // Replace simple ${mermaidCode}
+            systemInstruction = systemPromptTemplate.replace(/\${mermaidCode}/g, mermaidCode);
+            // Handle the escaped version if present: ${mermaidCode.replace(/"/g, '\\"')} or similar
+            // The API content has: ${mermaidCode.replace(/"/g, '\\\\\"')}
+            const escapedMermaidCode = mermaidCode.replace(/"/g, '\\"');
+            systemInstruction = systemInstruction.replace(/\${mermaidCode\.replace\(\/\"\/g,\s*'.*?'\)\}/g, escapedMermaidCode);
 
             const response = await generateResponse(
                 { provider: 'google', model: 'gemini-3-flash-preview', systemInstruction },
