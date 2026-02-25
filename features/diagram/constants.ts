@@ -4,13 +4,18 @@ export const DIAGRAM_CATEGORY = 'HarshDiagrams';
 export const AGENT_NAME = 'DiagramAssistant';
 
 export const SUGGESTIONS = [
-    "Add a Load Balancer",
-    "Add a Redis Cache",
-    "Scale API to 3 nodes",
-    "Connect User to UI"
+   "Add a Load Balancer",
+   "Add a Redis Cache",
+   "Scale API to 3 nodes",
+   "Connect User to UI"
 ];
 
+/**
+ * Fallback system instruction template if API fetch fails.
+ * Primary prompt is fetched from Component Studio (ID: 123, Title: HARSH_DIAGRAM_PROMPT)
+ */
 export const SYSTEM_INSTRUCTION_TEMPLATE = (mermaidCode: string) => `You are an AI Diagram Architect specializing in Mermaid.js.
+
 Your task is to update the current diagram based on user requests.
 
 Current Mermaid Syntax:

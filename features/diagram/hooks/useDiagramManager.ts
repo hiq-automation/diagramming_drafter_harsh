@@ -3,6 +3,8 @@ import { generateResponse } from '../../../services/llmService';
 import { getUserDoc, deleteFile, saveUserDoc, updateFile } from '../../../services/apiService';
 import { ChatMessage } from '../../../types';
 import { INITIAL_CODE, DIAGRAM_CATEGORY, AGENT_NAME, SYSTEM_INSTRUCTION_TEMPLATE } from '../constants';
+import { getComponentPrompts } from '../../../services/appBuilder/promptService';
+
 
 export const useDiagramManager = () => {
     const [prompt, setPrompt] = useState('');
@@ -15,6 +17,28 @@ export const useDiagramManager = () => {
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
         { role: 'model', content: "Hello! I'm your Diagram Architect. I've started with a clean canvas. What component or system should we begin with?" }
     ]);
+    const [systemPromptTemplate, setSystemPromptTemplate] = useState<string | null>(null);
+
+    const fetchSystemPrompt = useCallback(async () => {
+        try {
+            console.log("Fetching dynamic prompt for component 123...");
+            const prompts = await getComponentPrompts(123);
+            const harshPrompt = prompts.find(p => p.title === 'HARSH_DIAGRAM_PROMPT');
+            if (harshPrompt) {
+                console.log("Dynamic prompt 'HARSH_DIAGRAM_PROMPT' fetched successfully.");
+                setSystemPromptTemplate(harshPrompt.content);
+            } else {
+                console.warn("Prompt 'HARSH_DIAGRAM_PROMPT' not found in component 123.");
+            }
+        } catch (err) {
+            console.error("Failed to fetch system prompt:", err);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchSystemPrompt();
+    }, [fetchSystemPrompt]);
+
 
     const fetchDiagrams = useCallback(async () => {
         setIsLoadingDiagrams(true);
@@ -54,14 +78,14 @@ export const useDiagramManager = () => {
     }, [fetchDiagrams, activeFileId]);
 
     const handleSaveDiagram = useCallback(async () => {
-        const blob = new Blob([JSON.stringify({ 
-            mermaidCode, 
-            version: '1.0', 
-            timestamp: new Date().toISOString() 
+        const blob = new Blob([JSON.stringify({
+            mermaidCode,
+            version: '1.0',
+            timestamp: new Date().toISOString()
         })], { type: 'application/json' });
-        
+
         const metadata = { mermaidCode };
-        
+
         if (activeFileId) {
             const file = new File([blob], `diagram-${Date.now()}.json`, { type: 'application/json' });
             await updateFile(file, activeFileId, false, metadata);
@@ -80,15 +104,15 @@ export const useDiagramManager = () => {
         if ((diagram.metadata?.displayName || diagram.fileName.split('-')[0]) === newName) return;
 
         try {
-            const blob = new Blob([JSON.stringify({ 
+            const blob = new Blob([JSON.stringify({
                 mermaidCode: diagram.metadata?.mermaidCode || mermaidCode,
-                version: '1.0', 
-                timestamp: new Date().toISOString() 
+                version: '1.0',
+                timestamp: new Date().toISOString()
             })], { type: 'application/json' });
-            
-            const res = await saveUserDoc(blob, DIAGRAM_CATEGORY, AGENT_NAME, { 
-                ...diagram.metadata, 
-                displayName: newName 
+
+            const res = await saveUserDoc(blob, DIAGRAM_CATEGORY, AGENT_NAME, {
+                ...diagram.metadata,
+                displayName: newName
             });
 
             await deleteFile(fileId, false);
@@ -97,7 +121,7 @@ export const useDiagramManager = () => {
             } else if (activeFileId === fileId) {
                 setActiveFileId(null);
             }
-            
+
             setChatMessages(prev => [...prev, { role: 'model', content: `Diagram migrated and renamed to "${newName}".` }]);
             fetchDiagrams();
         } catch (err) {
@@ -109,16 +133,27 @@ export const useDiagramManager = () => {
     const handleGenerate = useCallback(async (overridingPrompt?: string) => {
         const inputPrompt = overridingPrompt || prompt;
         if (!inputPrompt.trim()) return;
-        
+
         const newUserMsg: ChatMessage = { role: 'user', content: inputPrompt };
         setChatMessages(prev => [...prev, newUserMsg]);
         if (!overridingPrompt) setPrompt('');
-        
+
         setIsGenerating(true);
         setError(null);
-        
+
         try {
-            const systemInstruction = SYSTEM_INSTRUCTION_TEMPLATE(mermaidCode);
+            let systemInstruction: string;
+            if (systemPromptTemplate) {
+                // Replace simple ${mermaidCode}
+                systemInstruction = systemPromptTemplate.replace(/\${mermaidCode}/g, mermaidCode);
+                // Handle the escaped version if present: ${mermaidCode.replace(/"/g, '\\"')} or similar
+                // The API content has: ${mermaidCode.replace(/"/g, '\\\\\"')}
+                const escapedMermaidCode = mermaidCode.replace(/"/g, '\\"');
+                systemInstruction = systemInstruction.replace(/\${mermaidCode\.replace\(\/\"\/g,\s*'.*?'\)\}/g, escapedMermaidCode);
+            } else {
+                systemInstruction = SYSTEM_INSTRUCTION_TEMPLATE(mermaidCode);
+            }
+
             const response = await generateResponse(
                 { provider: 'google', model: 'gemini-3-flash-preview', systemInstruction },
                 [...chatMessages, newUserMsg]
@@ -155,8 +190,8 @@ export const useDiagramManager = () => {
     }, []);
 
     return {
-        prompt, setPrompt, mermaidCode, setMermaidCode, isGenerating, error, diagrams, 
-        isLoadingDiagrams, activeFileId, chatMessages, fetchDiagrams, handleSelectDiagram, 
+        prompt, setPrompt, mermaidCode, setMermaidCode, isGenerating, error, diagrams,
+        isLoadingDiagrams, activeFileId, chatMessages, fetchDiagrams, handleSelectDiagram,
         handleDeleteDiagram, handleSaveDiagram, handleRenameDiagram, handleGenerate, handleClearHistory
     };
 };
