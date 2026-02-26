@@ -21,7 +21,7 @@ const fetchComponentsMinimal = async (projectId: number): Promise<ProjectCompone
     const response = await fetch(url, options);
     if (!response.ok) return [];
     const data = await response.json();
-    return Array.isArray(data) ? data.map((c: any) => ({ ...c, projectId: c.projectId || c.project_id })) : [];
+    return Array.isArray(data) ? data.map((c: any) => ({...c, projectId: c.projectId || c.project_id})) : [];
 };
 
 const fetchOrganizationsMinimal = async (): Promise<any[]> => {
@@ -57,8 +57,8 @@ export const getSelfComponent = async (): Promise<ProjectComponent | null> => {
             } else {
                 // Calculate base: Host + first path segment (ignoring index.html)
                 const pathParts = window.location.pathname.split('/').filter(p => p && p !== 'index.html');
-                const base = pathParts.length > 0
-                    ? `${window.location.origin}/${pathParts[0]}/`
+                const base = pathParts.length > 0 
+                    ? `${window.location.origin}/${pathParts[0]}/` 
                     : `${window.location.origin}/`;
                 url = new URL('metadata.json', base).href;
             }
@@ -71,7 +71,7 @@ export const getSelfComponent = async (): Promise<ProjectComponent | null> => {
             }
             const metadata = await metaRes.json();
             console.log("getSelfComponent: Metadata loaded:", metadata);
-
+            
             const { organization, project, component } = metadata;
 
             if (!organization || !project || !component) {
@@ -112,42 +112,11 @@ export const getSelfComponent = async (): Promise<ProjectComponent | null> => {
             return null;
         }
     })();
-
+    
     return selfComponentPromise;
 };
 
 export const getSelfComponentId = async (): Promise<number | null> => {
     const comp = await getSelfComponent();
     return comp ? comp.id : null;
-};
-
-/**
- * Resolves a component by its title using the App Builder API.
- * @param title The title of the component to find.
- */
-export const getComponentByTitle = async (title: string): Promise<ProjectComponent | null> => {
-    try {
-        console.log(`getComponentByTitle: Searching for component with title '${title}'...`);
-        // Mock implementation as per API change request
-        // In a real implementation, this would call:
-        // const baseUrl = `${getAppBuilderApiBaseUrl()}/app-builder/components/by-title`;
-        // but for now we fallback to fetching all components for the current project or a known set.
-
-        const selfComp = await getSelfComponent();
-        if (!selfComp) return null;
-
-        const components = await fetchComponentsMinimal(selfComp.projectId);
-        const match = components.find(c => c.title === title || c.name === title);
-
-        if (match) {
-            console.log(`getComponentByTitle: Found component '${title}' with ID ${match.id}`);
-            return match;
-        }
-
-        console.warn(`getComponentByTitle: Component with title '${title}' not found.`);
-        return null;
-    } catch (e) {
-        console.error(`getComponentByTitle: Failed to resolve component by title '${title}'`, e);
-        return null;
-    }
 };
