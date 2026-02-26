@@ -4,6 +4,9 @@ import { getUserDoc, deleteFile, saveUserDoc, updateFile } from '../../../servic
 import { ChatMessage } from '../../../types';
 import { INITIAL_CODE, DIAGRAM_CATEGORY, AGENT_NAME } from '../constants';
 import { getComponentPrompts } from '../../../services/appBuilder/promptService';
+import { getComponentByTitle } from '../../../services/appBuilder/componentService';
+
+const DIAGRAM_PROMPT_TITLE = 'HARSH_DIAGRAM_PROMPT';
 
 
 export const useDiagramManager = () => {
@@ -21,17 +24,26 @@ export const useDiagramManager = () => {
 
     const fetchSystemPrompt = useCallback(async () => {
         try {
-            console.log("Fetching dynamic prompt for component 123...");
-            const prompts = await getComponentPrompts(123);
-            const harshPrompt = prompts.find(p => p.title === 'HARSH_DIAGRAM_PROMPT');
+            console.log(`useDiagramManager: Fetching component ID for '${DIAGRAM_PROMPT_TITLE}'...`);
+            const component = await getComponentByTitle(DIAGRAM_PROMPT_TITLE);
+
+            if (!component) {
+                console.warn(`useDiagramManager: Could not resolve component ID for '${DIAGRAM_PROMPT_TITLE}'. Falling back.`);
+                return;
+            }
+
+            console.log(`useDiagramManager: Fetching prompts for component ID ${component.id}...`);
+            const prompts = await getComponentPrompts(component.id);
+            const harshPrompt = prompts.find(p => p.title === DIAGRAM_PROMPT_TITLE);
+
             if (harshPrompt) {
-                console.log("Dynamic prompt 'HARSH_DIAGRAM_PROMPT' fetched successfully.");
+                console.log(`useDiagramManager: Dynamic prompt '${DIAGRAM_PROMPT_TITLE}' fetched successfully.`);
                 setSystemPromptTemplate(harshPrompt.content);
             } else {
-                console.warn("Prompt 'HARSH_DIAGRAM_PROMPT' not found in component 123.");
+                console.warn(`useDiagramManager: Prompt '${DIAGRAM_PROMPT_TITLE}' not found in component ${component.id}.`);
             }
         } catch (err) {
-            console.error("Failed to fetch system prompt:", err);
+            console.error("useDiagramManager: Failed to fetch system prompt:", err);
         }
     }, []);
 
