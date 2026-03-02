@@ -4,6 +4,7 @@ import { getUserDoc, deleteFile, saveUserDoc, updateFile } from '../../../servic
 import { ChatMessage } from '../../../types';
 import { INITIAL_CODE, DIAGRAM_CATEGORY, AGENT_NAME } from '../constants';
 import { getComponentPrompts } from '../../../services/appBuilder/promptService';
+import { getSelfComponentId } from '../../../services/appBuilder/componentService';
 
 
 export const useDiagramManager = () => {
@@ -21,14 +22,19 @@ export const useDiagramManager = () => {
 
     const fetchSystemPrompt = useCallback(async () => {
         try {
-            console.log("Fetching dynamic prompt for component 123...");
-            const prompts = await getComponentPrompts(123);
+            const selfId = await getSelfComponentId();
+            if (!selfId) {
+                console.warn("fetchSystemPrompt: Could not resolve self component ID.");
+                return;
+            }
+            console.log(`Fetching dynamic prompt for component ${selfId}...`);
+            const prompts = await getComponentPrompts(selfId);
             const harshPrompt = prompts.find(p => p.title === 'HARSH_DIAGRAM_PROMPT');
             if (harshPrompt) {
                 console.log("Dynamic prompt 'HARSH_DIAGRAM_PROMPT' fetched successfully.");
                 setSystemPromptTemplate(harshPrompt.content);
             } else {
-                console.warn("Prompt 'HARSH_DIAGRAM_PROMPT' not found in component 123.");
+                console.warn(`Prompt 'HARSH_DIAGRAM_PROMPT' not found in component ${selfId}.`);
             }
         } catch (err) {
             console.error("Failed to fetch system prompt:", err);
