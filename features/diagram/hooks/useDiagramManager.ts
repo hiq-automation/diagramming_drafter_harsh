@@ -2,9 +2,10 @@ import { useState, useCallback, useEffect } from 'react';
 import { generateResponse } from '../../../services/llmService';
 import { getUserDoc, deleteFile, saveUserDoc, updateFile } from '../../../services/apiService';
 import { ChatMessage } from '../../../types';
-import { INITIAL_CODE, DIAGRAM_CATEGORY, AGENT_NAME, PROMPT_TITLE } from '../constants';
+import { INITIAL_CODE, DIAGRAM_CATEGORY, AGENT_NAME } from '../constants';
 import { getComponentPrompts } from '../../../services/appBuilder/promptService';
-import { getComponentByTitle } from '../../../services/appBuilder/componentService';
+
+
 export const useDiagramManager = () => {
     const [prompt, setPrompt] = useState('');
     const [mermaidCode, setMermaidCode] = useState(INITIAL_CODE);
@@ -20,29 +21,25 @@ export const useDiagramManager = () => {
 
     const fetchSystemPrompt = useCallback(async () => {
         try {
-            console.log(`Fetching component data from craft_studio.json for title: ${PROMPT_TITLE}`);
-            const component = await getComponentByTitle(PROMPT_TITLE);
-
-            if (!component) {
-                console.warn(`Component '${PROMPT_TITLE}' not found.`);
-                return;
-            }
-            console.log(`Resolved dynamic component ID: ${component.id} for prompt fetching.`);
-            const prompts = await getComponentPrompts(component.id);
-            const harshPrompt = prompts.find(p => p.title === PROMPT_TITLE);
+            console.log("Fetching dynamic prompt for component 123...");
+            const prompts = await getComponentPrompts(123);
+            const harshPrompt = prompts.find(p => p.title === 'HARSH_DIAGRAM_PROMPT');
             if (harshPrompt) {
-                console.log(`Dynamic prompt '${PROMPT_TITLE}' fetched successfully.`);
+                console.log("Dynamic prompt 'HARSH_DIAGRAM_PROMPT' fetched successfully.");
                 setSystemPromptTemplate(harshPrompt.content);
             } else {
-                console.warn(`Prompt '${PROMPT_TITLE}' not found in component ${component.id}.`);
+                console.warn("Prompt 'HARSH_DIAGRAM_PROMPT' not found in component 123.");
             }
         } catch (err) {
             console.error("Failed to fetch system prompt:", err);
         }
     }, []);
+
     useEffect(() => {
         fetchSystemPrompt();
     }, [fetchSystemPrompt]);
+
+
     const fetchDiagrams = useCallback(async () => {
         setIsLoadingDiagrams(true);
         try {
@@ -86,7 +83,9 @@ export const useDiagramManager = () => {
             version: '1.0',
             timestamp: new Date().toISOString()
         })], { type: 'application/json' });
+
         const metadata = { mermaidCode };
+
         if (activeFileId) {
             const file = new File([blob], `diagram-${Date.now()}.json`, { type: 'application/json' });
             await updateFile(file, activeFileId, false, metadata);
@@ -156,6 +155,7 @@ export const useDiagramManager = () => {
             // The API content has: ${mermaidCode.replace(/"/g, '\\\\\"')}
             const escapedMermaidCode = mermaidCode.replace(/"/g, '\\"');
             systemInstruction = systemInstruction.replace(/\${mermaidCode\.replace\(\/\"\/g,\s*'.*?'\)\}/g, escapedMermaidCode);
+
             const response = await generateResponse(
                 { provider: 'google', model: 'gemini-3-flash-preview', systemInstruction },
                 [...chatMessages, newUserMsg]
