@@ -21,7 +21,7 @@ const fetchComponentsMinimal = async (projectId: number): Promise<ProjectCompone
     const response = await fetch(url, options);
     if (!response.ok) return [];
     const data = await response.json();
-    return Array.isArray(data) ? data.map((c: any) => ({...c, projectId: c.projectId || c.project_id})) : [];
+    return Array.isArray(data) ? data.map((c: any) => ({ ...c, projectId: c.projectId || c.project_id })) : [];
 };
 
 const fetchOrganizationsMinimal = async (): Promise<any[]> => {
@@ -57,8 +57,8 @@ export const getSelfComponent = async (): Promise<ProjectComponent | null> => {
             } else {
                 // Calculate base: Host + first path segment (ignoring index.html)
                 const pathParts = window.location.pathname.split('/').filter(p => p && p !== 'index.html');
-                const base = pathParts.length > 0 
-                    ? `${window.location.origin}/${pathParts[0]}/` 
+                const base = pathParts.length > 0
+                    ? `${window.location.origin}/${pathParts[0]}/`
                     : `${window.location.origin}/`;
                 url = new URL('metadata.json', base).href;
             }
@@ -71,7 +71,7 @@ export const getSelfComponent = async (): Promise<ProjectComponent | null> => {
             }
             const metadata = await metaRes.json();
             console.log("getSelfComponent: Metadata loaded:", metadata);
-            
+
             const { organization, project, component } = metadata;
 
             if (!organization || !project || !component) {
@@ -112,11 +112,24 @@ export const getSelfComponent = async (): Promise<ProjectComponent | null> => {
             return null;
         }
     })();
-    
+
     return selfComponentPromise;
 };
 
 export const getSelfComponentId = async (): Promise<number | null> => {
     const comp = await getSelfComponent();
     return comp ? comp.id : null;
+};
+
+export const getComponentByTitle = async (title: string): Promise<ProjectComponent | null> => {
+    try {
+        const selfComp = await getSelfComponent();
+        if (!selfComp) return null;
+
+        const components = await fetchComponentsMinimal(selfComp.projectId);
+        return components.find(c => c.title === title) || null;
+    } catch (e) {
+        console.error(`getComponentByTitle: Failed to resolve component for title ${title}`, e);
+        return null;
+    }
 };

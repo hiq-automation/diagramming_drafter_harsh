@@ -10,4 +10,4 @@ export const SUGGESTIONS = [
    "Connect User to UI"
 ];
 
-
+export const PROMPT_TITLE = 'HARSH_DIAGRAM_PROMPT';
